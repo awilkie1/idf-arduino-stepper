@@ -4,7 +4,10 @@
 #
 
 PROJECT_NAME := hello-world
-EXTRA_COMPONENT_DIRS := ./components/
+# EXTRA_COMPONENT_DIRS := ./components/
 
-include $(IDF_PATH)/make/project.mk
+include $(ADF_PATH)/project.mk
+
+EXTRA_COMPONENT_DIRS := /Users/ojc/esp/projects/idf-3.3-arduino-template/components
+# include $(IDF_PATH)/make/project.mk
 
