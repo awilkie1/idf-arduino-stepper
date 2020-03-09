@@ -4,10 +4,15 @@
 #
 
 PROJECT_NAME := hello-world
-# EXTRA_COMPONENT_DIRS := ./components/
+EXTRA_COMPONENT_DIRS := ./components/
 
-include $(ADF_PATH)/project.mk
+# Note that the IDF path is inherited by the IDF path found in in the ESP_ADF directory's makefile
+# Comment out following line if using ADF
+include $(IDF_PATH)/make/project.mk
 
-EXTRA_COMPONENT_DIRS := /Users/ojc/esp/projects/idf-3.3-arduino-template/components
+# Uncomment the Following line to use ADF
+# include $(ADF_PATH)/project.mk
+
+# EXTRA_COMPONENT_DIRS := /Users/ojc/esp/projects/idf-3.3-arduino-template/components
 # include $(IDF_PATH)/make/project.mk
 

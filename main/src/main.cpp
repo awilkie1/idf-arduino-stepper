@@ -5,15 +5,26 @@
    Unless required by applicable law or agreed to in writing, this
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
+
+   Adapted by Oliver Copleston - March 2020
+   
+   ----README----
+   - Put arduino libraries in the Libraries folder
+   - All additional source files in the src folder
+   - All additional header files in the include folder
 */
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
+#include <Arduino.h>
 
+extern "C" {
+    // Any libraries written in C (not C++) should be included here
+}
 
-void app_main()
+extern "C" void app_main()
 {
     printf("Hello world!\n");
 
