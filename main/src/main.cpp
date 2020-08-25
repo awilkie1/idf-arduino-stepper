@@ -911,9 +911,9 @@ extern "C" void app_main()
     //PULL IN FROM NVS THE LOCATION
     device_location = command_init_location();
     
-    xTaskCreate(&tcp_task, "tcp_task", 3072, NULL, 3, tcp_task_handle);
-    xTaskCreate(&multicast_task, "multicast_task", 4096, NULL, 10, multicast_task_handle);
-    xTaskCreate(&broadcast_task, "broadcast_task", 4096, NULL, 10, broadcast_task_handle);
+    xTaskCreate(&tcp_task, "tcp_task", 3072, NULL, 3, &tcp_task_handle);
+    xTaskCreate(&multicast_task, "multicast_task", 4096, NULL, 10, &multicast_task_handle);
+    xTaskCreate(&broadcast_task, "broadcast_task", 4096, NULL, 10, &broadcast_task_handle);
     
     server_ping("boot");//Sends the boot up message to the server
    
