@@ -1,4 +1,40 @@
 #include "net.h"
+
+uint64_t multicast_id = 1;
+char multicast_queue_value[COMMAND_ITEM_SIZE];
+char broadcast_queue_value[COMMAND_ITEM_SIZE];
+
+char command_line[COMMAND_ITEMS][50];
+
+
+//NVS
+
+
+uint32_t my_handle;
+
+esp_err_t nvs_err;
+
+//OTA
+static const char *TAG = "simple_ota_example";
+extern const uint8_t server_cert_pem_start[] asm("_binary_ca_cert_pem_start");
+extern const uint8_t server_cert_pem_end[] asm("_binary_ca_cert_pem_end");
+
+
+/* The event group allows multiple bits for each event,
+   but we only care about one event - are we connected
+   to the AP with an IP? */
+const int CONNECTED_BIT = BIT0;
+
+//TCP Stuff
+char rx_buffer[128];
+char addr_str[128];
+int addr_family;
+int ip_protocol;
+
+int listen_sock;
+int err;
+char respond_value[COMMAND_ITEM_SIZE];
+
 void nvs_init(){
     // Initialize NVS.
     esp_err_t nvs_err = nvs_flash_init();
@@ -84,7 +120,6 @@ esp_err_t command_set_location(location_t location){
 }
 
 //WIFI
-
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 
 {
@@ -146,7 +181,6 @@ void init_wifi(void)
     wait_for_ip();//CUT this to ignore boot up looking for ip
 }
 //OTA
-
 esp_err_t _http_event_handler(esp_http_client_event_t *evt)
 {
     switch(evt->event_id) {
@@ -201,8 +235,6 @@ void simple_ota_example_task(void * pvParameter)
     }
 }
 //broadcast
-uint64_t multicast_id = 1;
-
 int get_command_line(char* a, int type){
 
    const char s[2] = " ";
