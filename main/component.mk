@@ -15,3 +15,5 @@ ARDUINO_USER_LIBS := $(foreach MODULE,$(ARDUINO_ULIBRARIES_LIST), $(ARDUINO_SING
 # Inlcude the arudino libraries and all the sources and headers from the src & include directories
 COMPONENT_ADD_INCLUDEDIRS := $(ARDUINO_USER_LIBS) . include
 COMPONENT_SRCDIRS := $(ARDUINO_USER_LIBS) . src
+
+COMPONENT_EMBED_TXTFILES :=  ${PROJECT_PATH}/server_certs/ca_cert.pem
