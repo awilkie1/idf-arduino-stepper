@@ -8,7 +8,7 @@
 
 #include "esp_spi_flash.h"
 
-#include "_stepper.h"
+// #include "_stepper.h"
 
 #include "esp_system.h"
 #include "esp_wifi.h"
@@ -75,3 +75,5 @@ void command_handler(char * queue_value, int type);
 void server_ping(char* command);
 void command_ota(void)
 // all of your header goes above this
+
+#endif // _NET_H

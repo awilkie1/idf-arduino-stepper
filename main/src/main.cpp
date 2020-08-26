@@ -20,9 +20,6 @@
 
 #include <Arduino.h>
 
-#include "_stepper.h"
-#include "net.h"
-
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event_loop.h"
@@ -48,6 +45,9 @@
 #include <lwip/netdb.h>
 #include "netdb.h"
 
+#include "Stepper.h"
+#include "net.h"
+
 static const char *TAG = "STARTUP";
 
 TaskHandle_t multicast_task_handle = NULL;
@@ -55,13 +55,16 @@ TaskHandle_t broadcast_task_handle = NULL;
 TaskHandle_t tcp_task_handle = NULL;
 
 
+#include "main.h"
 extern "C" {
     // Any libraries written in C (not C++) should be included here
-    #include "Stepper.h"
 }
 
 extern "C" void app_main()
 {
+    esp_log_level_set("*", ESP_LOG_INFO);
+    esp_log_level_set(TAG, ESP_LOG_INFO);
+
     nvs_init();
 
     ESP_ERROR_CHECK( err );
