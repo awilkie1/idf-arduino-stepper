@@ -37,8 +37,6 @@
 #include <lwip/netdb.h>
 #include "netdb.h"
 
-#include "_stepper.h"
-
 #ifdef __cplusplus
   extern "C" {
 #endif
