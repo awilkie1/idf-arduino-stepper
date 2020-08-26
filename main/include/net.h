@@ -1,8 +1,5 @@
-#ifndef NET_H
-#define NET_H
-#ifdef __cplusplus
-  extern "C" {
-#endif
+#ifndef _NET_H
+#define _NET_H
 // all your includes, data structures and definitions go below this
 
 #include "freertos/FreeRTOS.h"
@@ -10,6 +7,8 @@
 #include "freertos/event_groups.h"
 
 #include "esp_spi_flash.h"
+
+#include "_stepper.h"
 
 #include "esp_system.h"
 #include "esp_wifi.h"
@@ -33,7 +32,7 @@
 #include "lwip/err.h"
 #include "lwip/sockets.h"
 #include "lwip/sys.h"
-#include <lwip/netdb.h>
+#include "lwip/netdb.h"
 
 QueueHandle_t xQueue_broadcast_task;
 QueueHandle_t xQueue_multicast_task;
@@ -52,7 +51,6 @@ typedef struct location {
     int32_t z;
 } location_t;
 
-location_t device_location;
 
 //tcp stuff 
 typedef struct tcp_task_actions {
@@ -85,4 +83,3 @@ void command_handler(char * queue_value, int type);
 void server_ping(char* command);
 void command_ota(void)
 // all of your header goes above this
-#endif // NET_H

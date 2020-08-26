@@ -1,4 +1,39 @@
 #include "net.h"
+#include "_stepper.h"
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
+
+
+#include "esp_system.h"
+#include "esp_wifi.h"
+#include "esp_event_loop.h"
+#include "esp_log.h"
+#include "esp_ota_ops.h"
+#include "esp_http_client.h"
+#include "esp_https_ota.h"
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <unistd.h>
+#include <time.h>
+#include <inttypes.h>
+
+#include "nvs.h"
+#include "nvs_flash.h"
+
+#include "lwip/err.h"
+#include "lwip/sockets.h"
+#include "lwip/sys.h"
+#include "lwip/netdb.h"
+
+#ifdef __cplusplus
+  extern "C" {
+#endif
+
 
 uint64_t multicast_id = 1;
 char multicast_queue_value[COMMAND_ITEM_SIZE];
@@ -6,9 +41,7 @@ char broadcast_queue_value[COMMAND_ITEM_SIZE];
 
 char command_line[COMMAND_ITEMS][50];
 
-
 //NVS
-
 
 uint32_t my_handle;
 
@@ -34,6 +67,8 @@ int ip_protocol;
 int listen_sock;
 int err;
 char respond_value[COMMAND_ITEM_SIZE];
+
+location_t device_location;
 
 void nvs_init(){
     // Initialize NVS.
@@ -783,3 +818,6 @@ void command_handler(char * queue_value, int type){
         }
      
 }
+#ifdef __cplusplus
+  }
+#endif
