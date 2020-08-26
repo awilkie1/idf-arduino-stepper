@@ -45,7 +45,10 @@
 #include <lwip/netdb.h>
 #include "netdb.h"
 
-#include "Stepper.h"
+extern "C" {
+    // Any libraries written in  C++ should be included here
+    #include "Stepper.h"
+}
 #include "net.h"
 
 static const char *TAG = "STARTUP";
@@ -56,9 +59,7 @@ TaskHandle_t tcp_task_handle = NULL;
 
 
 #include "main.h"
-extern "C" {
-    // Any libraries written in C (not C++) should be included here
-}
+
 
 extern "C" void app_main()
 {
