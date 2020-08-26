@@ -8,7 +8,8 @@
 
 #include "esp_spi_flash.h"
 
-#include "_stepper.h"
+#include "main.h"
+// #include "_stepper.h"
 
 #include "esp_system.h"
 #include "esp_wifi.h"
@@ -33,6 +34,10 @@
 #include "lwip/sockets.h"
 #include "lwip/sys.h"
 #include "lwip/netdb.h"
+
+#ifdef __cplusplus
+  extern "C" {
+#endif
 
 QueueHandle_t xQueue_broadcast_task;
 QueueHandle_t xQueue_multicast_task;
@@ -73,7 +78,11 @@ void tcp_task_init();
 
 void command_handler(char * queue_value, int type);
 void server_ping(char* command);
-void command_ota(void)
+void command_ota(void);
 // all of your header goes above this
+
+#ifdef __cplusplus
+  }
+#endif
 
 #endif // _NET_H
