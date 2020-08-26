@@ -54,8 +54,12 @@ uint32_t my_handle;
 
 esp_err_t nvs_err;
 
+static EventGroupHandle_t wifi_event_group;
+
+// ESP_ERROR_CHECK( err );
+
 //OTA
-static const char *TAG = "simple_ota_example";
+static const char *TAG = "NET";
 extern const uint8_t server_cert_pem_start[] asm("_binary_ca_cert_pem_start");
 extern const uint8_t server_cert_pem_end[] asm("_binary_ca_cert_pem_end");
 
@@ -162,7 +166,7 @@ esp_err_t command_set_location(location_t location){
 }
 
 //WIFI
-static esp_err_t event_handler(void *ctx, system_event_t *event)
+esp_err_t event_handler(void *ctx, system_event_t *event)
 
 {
     switch (event->event_id) {
@@ -191,7 +195,7 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
     }
     return ESP_OK;
 }
-static void initialise_wifi(void)
+void initialise_wifi(void)
 {
     tcpip_adapter_init();
     wifi_event_group = xEventGroupCreate();
@@ -210,7 +214,7 @@ static void initialise_wifi(void)
     ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
     ESP_ERROR_CHECK( esp_wifi_start() );
 }
-static void wait_for_ip()
+void wait_for_ip()
 {
     uint32_t bits = CONNECTED_BIT;
     ESP_LOGI(TAG, "Waiting for AP connection...");
@@ -340,6 +344,7 @@ void broadcast_task(void *pvParameters)
     while (1) {
 
          xQueue_broadcast_task = xQueueCreate( 5, sizeof(char[COMMAND_ITEM_SIZE]));
+         
         if( xQueue_broadcast_task == NULL )
         {
             ESP_LOGI(TAG, "unable to create broadcast command queue");

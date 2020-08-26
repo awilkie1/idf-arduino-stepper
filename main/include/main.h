@@ -47,6 +47,11 @@ typedef struct location {
     int32_t z;
 } location_t;
 
+typedef struct tcp_task_actions {
+   int   action;
+   char  action_value[COMMAND_ITEM_SIZE];
+} tcp_task_action_t;
+
 #ifdef __cplusplus
   }
 #endif

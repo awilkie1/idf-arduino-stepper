@@ -11,6 +11,8 @@
    - All additional header files in the include folder
 */
 
+#include "main.h"
+
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -57,10 +59,6 @@ TaskHandle_t multicast_task_handle = NULL;
 TaskHandle_t broadcast_task_handle = NULL;
 TaskHandle_t tcp_task_handle = NULL;
 
-
-#include "main.h"
-
-
 extern "C" void app_main()
 {
     esp_log_level_set("*", ESP_LOG_INFO);
@@ -68,7 +66,7 @@ extern "C" void app_main()
 
     nvs_init();
 
-    ESP_ERROR_CHECK( err );
+   //  ESP_ERROR_CHECK( err );
     
     //SHORT DELAY TO NOT OVERLOAD NETWORK
     srand (time(NULL));

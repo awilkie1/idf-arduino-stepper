@@ -48,21 +48,15 @@ QueueHandle_t xQueue_tcp_respond;
 tcp_task_action_t tcp_queue_value;
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
-static EventGroupHandle_t wifi_event_group;
 
 //tcp stuff 
-typedef struct tcp_task_actions {
-   int   action;
-   char  action_value[COMMAND_ITEM_SIZE];
-} tcp_task_action_t;
-
-void nvs_init();
+void nvs_init(void);
 int32_t nvs_get_value(char* name);
 void nvs_set_value(char* name, int32_t value);
 location_t command_init_location();
 
-static void initialise_wifi(void);
-static void wait_for_ip();
+void initialise_wifi(void);
+void wait_for_ip();
 void init_wifi(void);
 
 void simple_ota_example_task(void * pvParameter);
@@ -70,8 +64,8 @@ int get_command_line(char* a, int type);
 void send_udp(char* udp_message, char* ip_address, int port);
 void broadcast_task(void *pvParameters);
 
-static int socket_add_ipv4_multicast_group(int sock, bool assign_source_if);
-static int create_multicast_ipv4_socket();
+int socket_add_ipv4_multicast_group(int sock, bool assign_source_if);
+int create_multicast_ipv4_socket();
 void multicast_task(void *pvParameters);
 
 void tcp_server_run();
