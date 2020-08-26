@@ -2,6 +2,8 @@
 #define _NET_H
 // all your includes, data structures and definitions go below this
 
+#include "main.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -23,7 +25,6 @@
 #include <time.h>
 #include <inttypes.h>
 
-#include "nvs.h"
 #include "nvs_flash.h"
 
 #include "lwip/err.h"

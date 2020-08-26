@@ -36,3 +36,9 @@
 
 // maximum command line length in chars
 #define COMMAND_ITEM_SIZE 400
+
+typedef struct location {
+    int32_t x;
+    int32_t y;
+    int32_t z;
+} location_t;

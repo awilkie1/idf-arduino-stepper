@@ -1,5 +1,5 @@
 
-
+#include "main.h"
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -74,12 +74,6 @@ int ip_protocol;
 int listen_sock;
 int err;
 char respond_value[COMMAND_ITEM_SIZE];
-
-typedef struct location {
-    int32_t x;
-    int32_t y;
-    int32_t z;
-} location_t;
 
 location_t device_location;
 
