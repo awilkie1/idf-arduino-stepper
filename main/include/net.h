@@ -47,6 +47,9 @@ QueueHandle_t xQueue_tcp_respond;
 
 tcp_task_action_t tcp_queue_value;
 
+
+location_t device_location;
+
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 
 //tcp stuff 
@@ -57,17 +60,18 @@ location_t command_init_location();
 
 void initialise_wifi(void);
 void wait_for_ip();
-void init_wifi(void);
+void init_wifi();
 
 void simple_ota_example_task(void * pvParameter);
 int get_command_line(char* a, int type);
 void send_udp(char* udp_message, char* ip_address, int port);
 void broadcast_task(void *pvParameters);
 
-int socket_add_ipv4_multicast_group(int sock, bool assign_source_if);
-int create_multicast_ipv4_socket();
+static int socket_add_ipv4_multicast_group(int sock, bool assign_source_if);
+static int create_multicast_ipv4_socket();
 void multicast_task(void *pvParameters);
 
+void tcp_task(void *pvParameters);
 void tcp_server_run();
 void tcp_task_init();
 

@@ -79,8 +79,6 @@ int listen_sock;
 int err;
 char respond_value[COMMAND_ITEM_SIZE];
 
-location_t device_location;
-
 void nvs_init(){
     // Initialize NVS.
     esp_err_t nvs_err = nvs_flash_init();
@@ -221,7 +219,7 @@ void wait_for_ip()
     xEventGroupWaitBits(wifi_event_group, bits, false, true, portMAX_DELAY);
     ESP_LOGI(TAG, "Connected to AP");
 }
-void init_wifi(void)
+void init_wifi()
 {
     initialise_wifi();
     wait_for_ip();//CUT this to ignore boot up looking for ip

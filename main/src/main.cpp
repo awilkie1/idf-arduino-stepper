@@ -84,6 +84,10 @@ extern "C" void app_main()
     xTaskCreate(&broadcast_task, "broadcast_task", 4096, NULL, 10, &broadcast_task_handle);
     
     server_ping("boot");//Sends the boot up message to the server
+
+    char multicast_queue_value[COMMAND_ITEM_SIZE];
+    char broadcast_queue_value[COMMAND_ITEM_SIZE];
+    // char tcp_queue_value[COMMAND_ITEM_SIZE];
    
     while(1){
          if (xQueueReceive(xQueue_multicast_task, &multicast_queue_value, 0)){
