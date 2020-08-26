@@ -1,10 +1,16 @@
-#include "net.h"
-#include "_stepper.h"
 
+
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
+#include "esp_spi_flash.h"
+
+#include <Arduino.h>
+
+#include "_stepper.h"
+#include "net.h"
 
 #include "esp_system.h"
 #include "esp_wifi.h"
@@ -28,7 +34,9 @@
 #include "lwip/err.h"
 #include "lwip/sockets.h"
 #include "lwip/sys.h"
-#include "lwip/netdb.h"
+#include <lwip/netdb.h>
+#include "netdb.h"
+
 
 #ifdef __cplusplus
   extern "C" {
@@ -67,6 +75,12 @@ int ip_protocol;
 int listen_sock;
 int err;
 char respond_value[COMMAND_ITEM_SIZE];
+
+typedef struct location {
+    int32_t x;
+    int32_t y;
+    int32_t z;
+} location_t;
 
 location_t device_location;
 

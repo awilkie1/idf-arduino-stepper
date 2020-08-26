@@ -44,14 +44,6 @@ tcp_task_action_t tcp_queue_value;
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 static EventGroupHandle_t wifi_event_group;
 
-
-typedef struct location {
-    int32_t x;
-    int32_t y;
-    int32_t z;
-} location_t;
-
-
 //tcp stuff 
 typedef struct tcp_task_actions {
    int   action;
