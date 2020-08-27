@@ -37,6 +37,8 @@
 #include <lwip/netdb.h>
 #include "netdb.h"
 
+#include <getopt.h> /* getopt */
+
 #ifdef __cplusplus
   extern "C" {
 #endif
