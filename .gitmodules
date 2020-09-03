@@ -3,3 +3,6 @@
 	url = https://github.com/espressif/arduino-esp32.git
 	branch = latest-3.3
 
+[submodule "main/libraries/TMCStepper"]
+	path = main/libraries/TMCStepper
+	url = https://github.com/teemuatlut/TMCStepper.git

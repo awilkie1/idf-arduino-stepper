@@ -4,10 +4,22 @@
 
 
 #include <esp_log.h>
+#include "esp_system.h"
+#include "esp_wifi.h"
+#include "esp_event_loop.h"
+#include "esp_log.h"
+#include "esp_ota_ops.h"
+#include "esp_http_client.h"
+#include "esp_https_ota.h"
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>      /* printf */
 #include <stdlib.h>     /* strtol */
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+#include "freertos/timers.h"
+#include "freertos/event_groups.h"
 
 #ifdef __cplusplus
     extern "C" {
@@ -18,7 +30,7 @@
 #define RANDOM_OTA_DELAY_PERIOD 5 // seconds over which OTA can be randomly delayed to avoid flooding the network at the same time
 
 // WIFI Network Connection
-#define _WIFI_SSID "_bloom"
+#define _WIFI_SSID "_bloom_mesh"
 #define _WIFI_PASS "sqU1d0ak"
 
 #define SERVER_IP_ADDRESS "10.0.2.10"
