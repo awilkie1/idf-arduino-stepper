@@ -79,6 +79,10 @@
 #ifndef Stepper_h
 #define Stepper_h
 
+#ifdef __cplusplus
+    extern "C" {
+#endif
+
 // library interface description
 class Stepper {
   public:
@@ -116,5 +120,9 @@ class Stepper {
 
     unsigned long last_step_time; // time stamp in us of when the last step was taken
 };
+
+#ifdef __cplusplus
+  }
+#endif
 
 #endif

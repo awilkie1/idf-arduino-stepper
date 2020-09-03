@@ -1,4 +1,3 @@
-
 #include "main.h"
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
@@ -9,8 +8,8 @@
 
 #include <Arduino.h>
 
-// #include "Stepper.h"
 #include "net.h"
+
 
 #include "esp_system.h"
 #include "esp_wifi.h"
@@ -738,8 +737,20 @@ void tcp_task(void *pvParameters)
 }
 
 void command_ota(void){
-    //xTaskCreate(&ota_task, "ota_task", 16384, NULL, 3, NULL);
     xTaskCreate(&simple_ota_example_task, "ota_example_task", 8192, NULL, 5, NULL);
+}
+
+void command_move_stepper(void){
+    stepper_task_action_t stepper_action;
+    stepper_action.action = atoi(command_line[1]);
+    stepper_action.action_direction = atoi(command_line[2]);
+    stepper_action.action_step = atoi(command_line[3]);
+            
+    if( xQueueSendToBack( xQueue_stepper_task, ( void * ) &stepper_action, ( TickType_t ) 10 ) != pdPASS )
+    {
+        ESP_LOGW(TAG, "Unable to add command to audio queue");
+        return;
+    }
 }
 static esp_err_t command_reset(){
     esp_restart();
@@ -782,6 +793,12 @@ void command_handler(char * queue_value, int type){
             command_reset();
             return;
         }
+
+        if (strncmp(command_line[0], "stepperMove" ,11) == 0){
+            command_move_stepper();
+            return;
+        }
+
         if (type){ // tcp only command
             if (strncmp(command_line[0], "get_mac" ,strlen("get_mac")) == 0){
                 char respond[20];

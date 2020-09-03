@@ -1,16 +1,3 @@
-/* Hello World Example
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-   Adapted by Oliver Copleston - March 2020
-   
-   ----README----
-   - Put arduino libraries in the Libraries folder
-   - All additional source files in the src folder
-   - All additional header files in the include folder
-*/
-
 #include "main.h"
 
 #include "sdkconfig.h"
@@ -47,9 +34,14 @@
 #include <lwip/netdb.h>
 #include "netdb.h"
 
+// extern "C" {
+//     // Any libraries written in  C++ should be included here
+//     #include "Stepper.h"
+// }
+
 extern "C" {
     // Any libraries written in  C++ should be included here
-    #include "Stepper.h"
+    #include "stepping.h"
 }
 #include "net.h"
 
@@ -58,6 +50,9 @@ static const char *TAG = "STARTUP";
 TaskHandle_t multicast_task_handle = NULL;
 TaskHandle_t broadcast_task_handle = NULL;
 TaskHandle_t tcp_task_handle = NULL;
+
+TaskHandle_t stepper_task_handle = NULL;
+
 
 extern "C" void app_main()
 {
@@ -82,13 +77,15 @@ extern "C" void app_main()
     xTaskCreate(&tcp_task, "tcp_task", 3072, NULL, 3, &tcp_task_handle);
     xTaskCreate(&multicast_task, "multicast_task", 4096, NULL, 10, &multicast_task_handle);
     xTaskCreate(&broadcast_task, "broadcast_task", 4096, NULL, 10, &broadcast_task_handle);
+
+    xTaskCreate(&stepper_task, "stepper_task", 3072, NULL, 3, &stepper_task_handle);
     
     server_ping("boot");//Sends the boot up message to the server
 
     char multicast_queue_value[COMMAND_ITEM_SIZE];
     char broadcast_queue_value[COMMAND_ITEM_SIZE];
-    // char tcp_queue_value[COMMAND_ITEM_SIZE];
-   
+
+
     while(1){
          if (xQueueReceive(xQueue_multicast_task, &multicast_queue_value, 0)){
             ESP_LOGD(TAG,"Recieved multicast command %s\n", multicast_queue_value);
@@ -101,6 +98,9 @@ extern "C" void app_main()
          if (xQueueReceive(xQueue_tcp_task, &tcp_queue_value, 0)){
             ESP_LOGD(TAG,"Recieved tcp command %s\n", tcp_queue_value.action_value);
             command_handler(tcp_queue_value.action_value, 1);
+         }
+         if (xQueueReceive(xQueue_stepper_task, &stepper_queue_value, 0)){
+            ESP_LOGD(TAG,"Recieved Stepper command");
          }
          vTaskDelay(10);
     }

@@ -10,8 +10,7 @@
 
 #include "esp_spi_flash.h"
 
-#include "main.h"
-// #include "_stepper.h"
+// #include "stepping.h"
 
 #include "esp_system.h"
 #include "esp_wifi.h"
@@ -46,7 +45,6 @@ QueueHandle_t xQueue_tcp_task;
 QueueHandle_t xQueue_tcp_respond;
 
 tcp_task_action_t tcp_queue_value;
-
 
 location_t device_location;
 

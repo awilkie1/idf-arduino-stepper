@@ -2,16 +2,21 @@
 #define _MAIN_H
 // ---- add your code below ----
 
-
 #include <esp_log.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdio.h>      /* printf */
 #include <stdlib.h>     /* strtol */
+// #include "Stepper.h"
+
+// extern "C" {
+//     #include "stepping.h"
+// }
 
 #ifdef __cplusplus
     extern "C" {
 #endif
+#include "stepping.h"
 
 //DELAYS 
 #define RANDOM_BOOT_DELAY_PERIOD 1 // seconds over which boot can be randomly delayed to avoid flooding the network at the same time
@@ -41,13 +46,22 @@
 // maximum command line length in chars
 #define COMMAND_ITEM_SIZE 400
 
+#define STEPPERSTEPS 256
+#define switchPin 25
+#define directionPin 12
+#define stepPin 14
+
+//extern Stepper myStepper;
+
+QueueHandle_t xQueue_stepper_task;
+
 typedef struct location {
     int32_t x;
     int32_t y;
     int32_t z;
 } location_t;
 
-typedef struct tcp_task_actions {
+typedef struct {
    int   action;
    char  action_value[COMMAND_ITEM_SIZE];
 } tcp_task_action_t;
