@@ -64,8 +64,16 @@ void init_strand() {
    uint8_t result_1 = driver.test_connection();
    ESP_LOGI(TAG, "Driver: %i", result_1);
 
-   uint32_t thr = 80; // 70-120 is optimal
-   driver.TPWMTHRS(thr);
+    /* ----THRESHOLD----
+     * Changing the 'thr' variable raises or lowers the velocity at which the stepper motor switches between StealthChop and SpreadCycle
+     * - Low values results in SpreadCycle being activated at lower velocities
+     * - High values results in SpreadCycle being activated at higher velocities
+     * - If SpreadCycle is active while too slow, there will be noise
+     * - If StealthChop is active while too fast, there will also be noise
+     * For the 15:1 stepper, values between 70-120 is optimal 
+    */
+    uint32_t thr = 80; // 70-120 is optimal
+    driver.TPWMTHRS(thr);
 }
 
 void stepper_task(void *args) {
