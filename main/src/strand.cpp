@@ -56,8 +56,8 @@ void init_strand() {
    driver.pwm_autoscale(true);     // Needed for stealthChop
 
    // Stepper Library Setup
-   stepper.setMaxSpeed(3600); // 100mm/s @ 80 steps/mm
-   stepper.setAcceleration(3000); // 2000mm/s^2
+   stepper.setMaxSpeed(3200); // 100mm/s @ 80 steps/mm
+   stepper.setAcceleration(2500); // 2000mm/s^2
    stepper.setEnablePin(EN_PIN);
    stepper.setPinsInverted(false, false, true);
    stepper.enableOutputs();
@@ -94,15 +94,17 @@ void stepper_task(void *args) {
     while(1) {
         if (xQueueReceive(xQueue_stepper_command, &stepper_command, portMAX_DELAY)) {
             // Set distance to move from comand variable
-            currentPosition = currentPosition + (stepper_command);
+            //currentPosition = currentPosition + (stepper_command);
             ESP_LOGI(TAG, "Stepper Move %ld : %ld", stepper_command, currentPosition);
         
-            stepper.move(currentPosition);
+            stepper.move(stepper_command);
             // Run the stepper loop until we get to our destination
             while(stepper.distanceToGo() != 0) {
                 stepper.run();
+                //vTaskDelay(1);
             }
         }
+        
     }
 
 }

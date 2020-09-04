@@ -71,6 +71,8 @@ extern "C" void app_main() {
 
    init_wifi();
 
+   esp_wifi_set_ps(WIFI_PS_NONE);
+
    //PULL IN FROM NVS THE LOCATION
    device_location = command_init_location();
     
@@ -125,6 +127,6 @@ extern "C" void app_main() {
             ESP_LOGD(TAG,"Recieved tcp command %s\n", tcp_queue_value.action_value);
             command_handler(tcp_queue_value.action_value, 1);
          }
-         vTaskDelay(10);
+         vTaskDelay(1);
     }
 }
