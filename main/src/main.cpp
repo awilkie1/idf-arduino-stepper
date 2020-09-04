@@ -51,6 +51,9 @@ TaskHandle_t broadcast_task_handle = NULL;
 TaskHandle_t tcp_task_handle = NULL;
 TaskHandle_t stepper_task_handle = NULL;
 
+QueueSetHandle_t queue_set;
+QueueSetMemberHandle_t queue_set_member;
+
 extern "C" void app_main() {    
       
    Serial.begin(115200);
@@ -113,21 +116,28 @@ extern "C" void app_main() {
    //    vTaskDelay(pdMS_TO_TICKS(100));
    // }
 
+   queue_set = xQueueCreateSet(3);                    // Create QueueSet
+   vTaskDelay(10);
+   // Add all of the networking queue to the set
+   xQueueAddToSet(xQueue_multicast_task, queue_set);
+   xQueueAddToSet(xQueue_broadcast_task, queue_set);
+   xQueueAddToSet(xQueue_tcp_task, queue_set);
+
+   // Block the task until we receive a value from any of the queues
+   while ((queue_set_member = xQueueSelectFromSet(queue_set, portMAX_DELAY))) {
+      // Determine which queue has values ready to receive, and receive those values
+      if ((queue_set_member == xQueue_multicast_task) && (xQueueReceive(xQueue_multicast_task, &multicast_queue_value, 10))) {
+         ESP_LOGD(TAG,"Recieved multicast command %s\n", multicast_queue_value);
+         command_handler(multicast_queue_value, 0);
+      }
+      if ((queue_set_member == xQueue_broadcast_task) && (xQueueReceive(xQueue_broadcast_task, &broadcast_queue_value, 10))) {
+         ESP_LOGD(TAG,"Recieved broadcast command %s\n", broadcast_queue_value);
+         command_handler(broadcast_queue_value, 0);
+      }
+      if ((queue_set_member == xQueue_tcp_task) && (xQueueReceive(xQueue_tcp_task, &tcp_queue_value, 10))) {
+         ESP_LOGD(TAG,"Recieved tcp command %s\n", tcp_queue_value.action_value);
+         command_handler(tcp_queue_value.action_value, 1);
+      }
+   }
    
-   
-    while(1){
-         if (xQueueReceive(xQueue_multicast_task, &multicast_queue_value, 0)){
-            ESP_LOGD(TAG,"Recieved multicast command %s\n", multicast_queue_value);
-            command_handler(multicast_queue_value, 0);
-         }
-         if (xQueueReceive(xQueue_broadcast_task, &broadcast_queue_value, 0)){
-            ESP_LOGD(TAG,"Recieved broadcast command %s\n", broadcast_queue_value);
-            command_handler(broadcast_queue_value, 0);
-         }
-         if (xQueueReceive(xQueue_tcp_task, &tcp_queue_value, 0)){
-            ESP_LOGD(TAG,"Recieved tcp command %s\n", tcp_queue_value.action_value);
-            command_handler(tcp_queue_value.action_value, 1);
-         }
-         vTaskDelay(1);
-    }
 }

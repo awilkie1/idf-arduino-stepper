@@ -14,8 +14,10 @@ const int uart_buffer_size = (1024 * 2);
 #define RXD2 16
 #define TXD2 17
 #define EN_PIN           5 // Enable
-#define DIR_PIN          14 // Direction
-#define STEP_PIN         12 // Step
+// #define DIR_PIN          14 // Direction
+// #define STEP_PIN         12 // Step
+#define DIR_PIN          19 // Direction (Oliver)
+#define STEP_PIN         14 // Step  (Oliver)
 #define R_SENSE 0.11f
 
 TMC2208Stepper driver(&SerialPort, R_SENSE); 
@@ -101,7 +103,7 @@ void stepper_task(void *args) {
             // Run the stepper loop until we get to our destination
             while(stepper.distanceToGo() != 0) {
                 stepper.run();
-                //vTaskDelay(1);
+                // vTaskDelay(1);
             }
         }
         

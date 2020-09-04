@@ -30,7 +30,8 @@
 #define RANDOM_OTA_DELAY_PERIOD 5 // seconds over which OTA can be randomly delayed to avoid flooding the network at the same time
 
 // WIFI Network Connection
-#define _WIFI_SSID "_bloom"
+// #define _WIFI_SSID "_bloom"
+#define _WIFI_SSID "_bloom_mesh" // Ollie's test env
 #define _WIFI_PASS "sqU1d0ak"
 
 #define SERVER_IP_ADDRESS "10.0.2.10"
