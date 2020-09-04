@@ -59,6 +59,13 @@ typedef struct location {
     int32_t z;
 } location_t;
 
+typedef struct stepper {
+    int32_t current;
+    int32_t min;
+    int32_t max;
+    int32_t target;
+} stepper_t;
+
 typedef struct {
    int   action;
    char  action_value[COMMAND_ITEM_SIZE];

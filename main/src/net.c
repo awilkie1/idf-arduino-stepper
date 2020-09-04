@@ -163,6 +163,27 @@ esp_err_t command_set_location(location_t location){
 
     return ESP_OK;
 }
+//
+stepper_t command_init_stepper(){
+
+  stepper_t stepper;
+
+  stepper.current = nvs_get_value("stepper_current");
+  stepper.min = nvs_get_value("stepper_min");
+  stepper.max = nvs_get_value("stepper_max");
+  stepper.target = nvs_get_value("stepper_target");
+  return stepper;
+}
+esp_err_t command_set_stepper(stepper_t stepper){
+
+    nvs_set_value("stepper_current",stepper.current);
+    nvs_set_value("stepper_min",stepper.min);
+    nvs_set_value("stepper_max",stepper.max);
+    nvs_set_value("stepper_target",stepper.target);
+    device_stepper = command_init_stepper();
+
+    return ESP_OK;
+}
 
 //WIFI
 esp_err_t event_handler(void *ctx, system_event_t *event)
@@ -810,6 +831,24 @@ void command_handler(char * queue_value, int type){
 
                 //ESP_LOGI(TAG, "LOCATION x:%d y:%d: z:%d", atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]));
 
+                char respond[3];
+                strncpy(respond, "OK" ,3);
+                if( xQueueSendToBack( xQueue_tcp_respond, ( void * ) &respond, ( TickType_t ) 10 ) != pdPASS )
+                {
+                    //* Failed to post the message, even after 10 ticks. */
+                    ESP_LOGW(TAG, "Unable to add command to TCP queue");
+                    return;
+                }
+
+            }
+            if (strncmp(command_line[0], "set_max" ,strlen("set_max")) == 0){
+                stepper_t step;
+                step.current = atoi(command_line[1]);
+                step.min = atoi(command_line[2]);
+                step.max = atoi(command_line[3]);
+                step.target = atoi(command_line[4]);
+                command_set_stepper(step);
+                //ESP_LOGI(TAG, "LOCATION x:%d y:%d: z:%d", atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]));
                 char respond[3];
                 strncpy(respond, "OK" ,3);
                 if( xQueueSendToBack( xQueue_tcp_respond, ( void * ) &respond, ( TickType_t ) 10 ) != pdPASS )

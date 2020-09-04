@@ -78,7 +78,7 @@ void init_strand() {
      * - If StealthChop is active while too fast, there will also be noise
      * For the 15:1 stepper, values between 70-120 is optimal 
     */
-    uint32_t thr = 60; // 70-120 is optimal
+    uint32_t thr = 120; // 70-120 is optimal
     driver.TPWMTHRS(thr);
 }
 

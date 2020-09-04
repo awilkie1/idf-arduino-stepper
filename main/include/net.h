@@ -49,7 +49,7 @@ QueueHandle_t xQueue_tcp_respond;
 tcp_task_action_t tcp_queue_value;
 
 location_t device_location;
-
+stepper_t device_stepper;
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 
 //tcp stuff 
@@ -57,6 +57,7 @@ void nvs_init(void);
 int32_t nvs_get_value(char* name);
 void nvs_set_value(char* name, int32_t value);
 location_t command_init_location();
+stepper_t command_init_stepper();
 
 void initialise_wifi(void);
 void wait_for_ip();
