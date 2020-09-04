@@ -82,7 +82,7 @@ extern "C" void app_main() {
 
     char multicast_queue_value[COMMAND_ITEM_SIZE];
     char broadcast_queue_value[COMMAND_ITEM_SIZE];
-    char tcp_queue_value[COMMAND_ITEM_SIZE];
+    //char tcp_queue_value[COMMAND_ITEM_SIZE];
    
    server_ping("boot");//Sends the boot up message to the server
 

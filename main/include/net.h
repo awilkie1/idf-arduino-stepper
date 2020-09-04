@@ -11,7 +11,8 @@
 #include "esp_spi_flash.h"
 
 #include "main.h"
-// #include "_stepper.h"
+
+#include "strand.hpp"
 
 #include "esp_system.h"
 #include "esp_wifi.h"

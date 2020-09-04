@@ -9,7 +9,6 @@
 
 #include <Arduino.h>
 
-// #include "Stepper.h"
 #include "net.h"
 
 #include "esp_system.h"
@@ -746,6 +745,7 @@ static esp_err_t command_reset(){
     return ESP_OK;
 }
 
+
 //MESSAGING
 void server_ping(char* command){
     char mac_ip_data[256];
@@ -780,6 +780,11 @@ void command_handler(char * queue_value, int type){
         }
         if (strncmp(command_line[0], "reset" ,5) == 0){
             command_reset();
+            return;
+        }
+
+        if (strncmp(command_line[0], "stepperMove" ,3) == 0){
+            command_move(atoi(command_line[1]));
             return;
         }
         if (type){ // tcp only command

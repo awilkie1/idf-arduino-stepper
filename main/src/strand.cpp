@@ -14,8 +14,8 @@ const int uart_buffer_size = (1024 * 2);
 #define RXD2 16
 #define TXD2 17
 #define EN_PIN           5 // Enable
-#define DIR_PIN          19 // Direction
-#define STEP_PIN         14 // Step
+#define DIR_PIN          14 // Direction
+#define STEP_PIN         12 // Step
 #define R_SENSE 0.11f
 
 TMC2208Stepper driver(&SerialPort, R_SENSE); 
@@ -28,6 +28,12 @@ struct {
     uint8_t hysteresis_start = 8;   // [1..8]
     int8_t hysteresis_end = 12;     // [-3..12]
 } config;
+
+long currentPosition;
+
+void command_move(int move){
+    xQueueSendToBack(xQueue_stepper_command, (void *) &move, 0);
+}
 
 void init_strand() {
     // Start UART and TMC2208
@@ -50,8 +56,8 @@ void init_strand() {
    driver.pwm_autoscale(true);     // Needed for stealthChop
 
    // Stepper Library Setup
-   stepper.setMaxSpeed(1600); // 100mm/s @ 80 steps/mm
-   stepper.setAcceleration(240); // 2000mm/s^2
+   stepper.setMaxSpeed(3600); // 100mm/s @ 80 steps/mm
+   stepper.setAcceleration(3000); // 2000mm/s^2
    stepper.setEnablePin(EN_PIN);
    stepper.setPinsInverted(false, false, true);
    stepper.enableOutputs();
@@ -72,7 +78,7 @@ void init_strand() {
      * - If StealthChop is active while too fast, there will also be noise
      * For the 15:1 stepper, values between 70-120 is optimal 
     */
-    uint32_t thr = 80; // 70-120 is optimal
+    uint32_t thr = 60; // 70-120 is optimal
     driver.TPWMTHRS(thr);
 }
 
@@ -88,7 +94,10 @@ void stepper_task(void *args) {
     while(1) {
         if (xQueueReceive(xQueue_stepper_command, &stepper_command, portMAX_DELAY)) {
             // Set distance to move from comand variable
-            stepper.move(stepper_command);
+            currentPosition = currentPosition + (stepper_command);
+            ESP_LOGI(TAG, "Stepper Move %ld : %ld", stepper_command, currentPosition);
+        
+            stepper.move(currentPosition);
             // Run the stepper loop until we get to our destination
             while(stepper.distanceToGo() != 0) {
                 stepper.run();
