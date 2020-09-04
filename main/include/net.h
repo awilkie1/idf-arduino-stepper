@@ -59,6 +59,9 @@ void nvs_set_value(char* name, int32_t value);
 location_t command_init_location();
 stepper_t command_init_stepper();
 
+void setPramamter(int type, int value);
+void saveParamters();
+
 void initialise_wifi(void);
 void wait_for_ip();
 void init_wifi();
