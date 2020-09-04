@@ -83,9 +83,7 @@ extern "C" void app_main() {
    xTaskCreate(&tcp_task, "tcp_task", 3072, NULL, 3, &tcp_task_handle);
    xTaskCreate(&multicast_task, "multicast_task", 4096, NULL, 10, &multicast_task_handle);
    xTaskCreate(&broadcast_task, "broadcast_task", 4096, NULL, 10, &broadcast_task_handle);
-    
-   //  server_ping("boot");//Sends the boot up message to the server
-
+   
     char multicast_queue_value[COMMAND_ITEM_SIZE];
     char broadcast_queue_value[COMMAND_ITEM_SIZE];
     //char tcp_queue_value[COMMAND_ITEM_SIZE];

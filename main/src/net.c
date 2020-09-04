@@ -783,6 +783,28 @@ void server_ping(char* command){
     sprintf(mac_ip_data,"%s %s - %s",cmd,mac_string,ip_string);
     send_udp(mac_ip_data,SERVER_IP_ADDRESS,SERVER_PORT);
 }
+void sendMessage(char* command, char* message){
+    char mac_ip_data[256];
+    char mac_string[256];
+    //MAC
+    uint8_t mac[6];
+    esp_read_mac(mac, ESP_MAC_WIFI_STA);
+    sprintf(mac_string,"%02x:%02x:%02x:%02x:%02x:%02x",mac[0],mac[1],mac[2],mac[3],mac[4],mac[5]);
+    //IP
+    tcpip_adapter_ip_info_t ip_info;
+    tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info);
+    char ip_string[30];
+    strcpy(ip_string, inet_ntoa(ip_info.ip.addr));
+    //COMMAND
+    char cmd[10];
+    strcpy(cmd, command);
+    //MESSAGE
+    char msg[sizeof(message)];
+    strcpy(msg, message);
+    //ASSEMBEL & SEND
+    sprintf(mac_ip_data,"%s %s %s %s",cmd,mac_string,ip_string, msg);
+    send_udp(mac_ip_data,SERVER_IP_ADDRESS,SERVER_PORT);
+}
 
 //MESSAGE QUE
 void command_handler(char * queue_value, int type){
@@ -803,11 +825,20 @@ void command_handler(char * queue_value, int type){
             command_reset();
             return;
         }
-
         if (strncmp(command_line[0], "stepperMove" ,3) == 0){
             command_move(atoi(command_line[1]));
             return;
         }
+        if (strncmp(command_line[0], "update" ,3) == 0){
+            char cmd[10];
+            sprintf(cmd,"update");
+
+            char respond[30];
+            sprintf(respond, "%d %d %d", device_stepper.current, device_stepper.min, device_stepper.max);
+            sendMessage(cmd, respond);
+            return;
+        }
+
         if (type){ // tcp only command
             if (strncmp(command_line[0], "get_mac" ,strlen("get_mac")) == 0){
                 char respond[20];
@@ -858,6 +889,17 @@ void command_handler(char * queue_value, int type){
                     return;
                 }
 
+            }
+            if (strncmp(command_line[0], "update" ,strlen("get_location")) == 0){
+
+                char respond[40];
+                sprintf(respond, "location x: 1 y: 2 z: 3");
+                if( xQueueSendToBack( xQueue_tcp_respond, ( void * ) &respond, ( TickType_t ) 10 ) != pdPASS )
+                {
+                    //* Failed to post the message, even after 10 ticks. */
+                    ESP_LOGW(TAG, "Unable to add command to TCP queue");
+                    return;
+                }
             }
             if (strncmp(command_line[0], "get_location" ,strlen("get_location")) == 0){
 

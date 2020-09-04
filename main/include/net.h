@@ -78,6 +78,7 @@ void tcp_task_init();
 
 void command_handler(char * queue_value, int type);
 void server_ping(char* command);
+void server_message(char* command,char* message);
 void command_ota(void);
 // all of your header goes above this
 
