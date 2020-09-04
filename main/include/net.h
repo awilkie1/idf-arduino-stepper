@@ -47,7 +47,6 @@ QueueHandle_t xQueue_tcp_respond;
 
 tcp_task_action_t tcp_queue_value;
 
-
 location_t device_location;
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
