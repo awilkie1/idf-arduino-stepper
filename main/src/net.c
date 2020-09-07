@@ -190,8 +190,8 @@ void setPramamter(int type, int value){
     ESP_LOGI(TAG, "SET PARAMTER %d : %d", type, value);
 
     if (type==1) device_stepper.current = value;
-    if (type==2) device_stepper.max = value;
-    if (type==3) device_stepper.min = value;
+    if (type==2) device_stepper.min = value;
+    if (type==3) device_stepper.max = value;
     if (type==4) device_stepper.target = value;
 
     
@@ -372,9 +372,8 @@ void send_udp(char* udp_message, char* ip_address, int port){
     strcpy(buffer, udp_message);
     sendto(sock, buffer, strlen(buffer), 0, (struct sockaddr *)&sourceAddr, sizeof(sourceAddr));
     
-    ESP_LOGI(TAG, "SENT MESSAGE %s : %s: %d", udp_message, ip_address, port);
+    ESP_LOGI(TAG, "SENT MESSAGE %s : %s @ %d", udp_message, ip_address, port);
     
-
 }
 
 void broadcast_task(void *pvParameters)
@@ -803,7 +802,8 @@ void server_ping(char* command){
     strcpy(ip_string, inet_ntoa(ip_info.ip.addr));
     char cmd[10];
     strcpy(cmd, command);
-    sprintf(mac_ip_data,"%s %s - %s",cmd,mac_string,ip_string);
+    sprintf(mac_ip_data,"%s %s %s",cmd,mac_string,ip_string);
+    
     send_udp(mac_ip_data,SERVER_IP_ADDRESS,SERVER_PORT);
 }
 void sendMessage(char* command, char* message){
@@ -828,7 +828,13 @@ void sendMessage(char* command, char* message){
     sprintf(mac_ip_data,"%s %s %s %s",cmd,mac_string,ip_string, msg);
     send_udp(mac_ip_data,SERVER_IP_ADDRESS,SERVER_PORT);
 }
-
+void updateUdp(){
+    char cmd[10];
+    sprintf(cmd,"update");
+    char respond[30];
+    sprintf(respond, "%d %d %d %d", device_stepper.current, device_stepper.min, device_stepper.max,device_stepper.target);
+    sendMessage(cmd, respond);
+}
 
 //MESSAGE QUE
 void command_handler(char * queue_value, int type){
@@ -856,24 +862,21 @@ void command_handler(char * queue_value, int type){
 
         if (strncmp(command_line[0], "setMin" ,6) == 0){
              ESP_LOGI(TAG, "SET MIN");
-            // setPramamter(2, atoi(command_line[1]));
-            // saveParamters();
+            setPramamter(2, atoi(command_line[1]));
+            saveParamters();
+            updateUdp();
             return;
 
         }
         if (strncmp(command_line[0], "setMax" ,6) == 0){
             ESP_LOGI(TAG, "SET MAX");
-            // setPramamter(3, atoi(command_line[1]));
-            // saveParamters();
+            setPramamter(3, atoi(command_line[1]));
+            saveParamters();
+            updateUdp();
             return;
         }
         if (strncmp(command_line[0], "update" ,6) == 0){
-            char cmd[10];
-            sprintf(cmd,"update");
-
-            char respond[30];
-            sprintf(respond, "%d %d %d", device_stepper.current, device_stepper.min, device_stepper.max);
-            sendMessage(cmd, respond);
+            updateUdp();
             return;
         }
 
@@ -908,38 +911,38 @@ void command_handler(char * queue_value, int type){
                     ESP_LOGW(TAG, "Unable to add command to TCP queue");
                     return;
                 }
-
+  
             }
-            // if (strncmp(command_line[0], "setMin" ,strlen("setMin")) == 0){
-            //     ESP_LOGI(TAG, "SET MIN");
-            //     setPramamter(2, atoi(command_line[1]));
-            //     saveParamters();
-            //     //ESP_LOGI(TAG, "LOCATION x:%d y:%d: z:%d", atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]));
-            //     char respond[3];
-            //     strncpy(respond, "OK" ,3);
-            //     if( xQueueSendToBack( xQueue_tcp_respond, ( void * ) &respond, ( TickType_t ) 10 ) != pdPASS )
-            //     {
-            //         //* Failed to post the message, even after 10 ticks. */
-            //         ESP_LOGW(TAG, "Unable to add command to TCP queue");
-            //         return;
-            //     }
+            if (strncmp(command_line[0], "setMin" ,strlen("setMin")) == 0){
+                ESP_LOGI(TAG, "SET MIN");
+                setPramamter(2, atoi(command_line[1]));
+                saveParamters();
+                //ESP_LOGI(TAG, "LOCATION x:%d y:%d: z:%d", atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]));
+                char respond[3];
+                strncpy(respond, "OK" ,3);
+                if( xQueueSendToBack( xQueue_tcp_respond, ( void * ) &respond, ( TickType_t ) 10 ) != pdPASS )
+                {
+                    //* Failed to post the message, even after 10 ticks. */
+                    ESP_LOGW(TAG, "Unable to add command to TCP queue");
+                    return;
+                }
 
-            // }   
-            // if (strncmp(command_line[0], "setMax" ,strlen("setMax")) == 0){
-            //     ESP_LOGI(TAG, "SET MAX");
-            //     setPramamter(3, atoi(command_line[1]));
-            //     saveParamters();
-            //     //ESP_LOGI(TAG, "LOCATION x:%d y:%d: z:%d", atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]));
-            //     char respond[3];
-            //     strncpy(respond, "OK" ,3);
-            //     if( xQueueSendToBack( xQueue_tcp_respond, ( void * ) &respond, ( TickType_t ) 10 ) != pdPASS )
-            //     {
-            //         //* Failed to post the message, even after 10 ticks. */
-            //         ESP_LOGW(TAG, "Unable to add command to TCP queue");
-            //         return;
-            //     }
+            }   
+            if (strncmp(command_line[0], "setMax" ,strlen("setMax")) == 0){
+                ESP_LOGI(TAG, "SET MAX");
+                setPramamter(3, atoi(command_line[1]));
+                saveParamters();
+                //ESP_LOGI(TAG, "LOCATION x:%d y:%d: z:%d", atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]));
+                char respond[3];
+                strncpy(respond, "OK" ,3);
+                if( xQueueSendToBack( xQueue_tcp_respond, ( void * ) &respond, ( TickType_t ) 10 ) != pdPASS )
+                {
+                    //* Failed to post the message, even after 10 ticks. */
+                    ESP_LOGW(TAG, "Unable to add command to TCP queue");
+                    return;
+                }
 
-            // }   
+            }   
             if (strncmp(command_line[0], "update" ,strlen("get_location")) == 0){
 
                 char respond[40];

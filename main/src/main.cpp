@@ -64,10 +64,7 @@ extern "C" void app_main() {
 
     nvs_init();
 
-   //  ESP_ERROR_CHECK( err );
-   // Serial.begin(115200);
-    
-    //SHORT DELAY TO NOT OVERLOAD NETWORK
+   //SHORT DELAY TO NOT OVERLOAD NETWORK
    //  srand (time(NULL));
    //  int boot_delay = (esp_random() % RANDOM_BOOT_DELAY_PERIOD + 1) * 1000;
    //  vTaskDelay(boot_delay / portTICK_PERIOD_MS);
