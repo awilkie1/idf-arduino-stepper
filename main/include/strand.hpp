@@ -17,7 +17,6 @@ void stepper_task(void *args);
 
 void command_move(int move, int type); 
 
-stepper_command_t stepper_commands;
 
 #ifdef __cplusplus
   }

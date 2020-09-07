@@ -9,6 +9,8 @@ static const char *TAG = "STEPPER";
 
 QueueHandle_t xQueue_stepper_command; // Must redefine here
 
+stepper_command_t stepper_commands;
+
 HardwareSerial SerialPort(2);
 const int uart_buffer_size = (1024 * 2);
 #define RXD2 16
