@@ -67,6 +67,11 @@ typedef struct stepper {
     int32_t target;
 } stepper_t;
 
+typedef struct stepper_command {
+    long move;
+    int type;
+} stepper_command_t;
+
 typedef struct {
    int   action;
    char  action_value[COMMAND_ITEM_SIZE];

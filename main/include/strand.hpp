@@ -10,11 +10,14 @@
 // ----VARIABLES----
 extern QueueHandle_t xQueue_stepper_command; // This external reference has to be defined again in Strand.c
 
+
 // ----FUNCTIONS----
 void init_strand();
 void stepper_task(void *args);
 
-void command_move(int move);
+void command_move(int move, int type); 
+
+stepper_command_t stepper_commands;
 
 #ifdef __cplusplus
   }

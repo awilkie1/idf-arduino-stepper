@@ -196,7 +196,6 @@ void setPramamter(int type, int value){
 
     
 }
-
 void saveParamters(){
     stepper_t step;
     step.current = device_stepper.current;
@@ -803,7 +802,7 @@ void server_ping(char* command){
     char cmd[10];
     strcpy(cmd, command);
     sprintf(mac_ip_data,"%s %s %s",cmd,mac_string,ip_string);
-    
+
     send_udp(mac_ip_data,SERVER_IP_ADDRESS,SERVER_PORT);
 }
 void sendMessage(char* command, char* message){
@@ -842,25 +841,28 @@ void command_handler(char * queue_value, int type){
         int command_count =  get_command_line(queue_value, type);  // command line parser
 
         // ----- Standard Functions ----- //
-        if (strncmp(command_line[0], "duplicate" ,9) == 0){
+        if (strcmp(command_line[0], "duplicate") == 0){
             //heap_caps_print_heap_info(MALLOC_CAP_DEFAULT);
             ESP_LOGI(TAG, "[DUPLICATE]");
             return;
         }
-        if (strncmp(command_line[0], "ota" ,3) == 0){
+        if (strcmp(command_line[0], "ota") == 0){
             command_ota();
             return;
         }
-        if (strncmp(command_line[0], "reset" ,5) == 0){
+        if (strcmp(command_line[0], "reset") == 0){
             command_reset();
             return;
         }
-        if (strncmp(command_line[0], "stepperMove" ,3) == 0){
-            command_move(atoi(command_line[1]));
+        if (strcmp(command_line[0], "stepperMove") == 0){
+            command_move(atoi(command_line[1]), 0);
             return;
         }
-
-        if (strncmp(command_line[0], "setMin" ,6) == 0){
+        if (strcmp(command_line[0], "stepperTranslate") == 0){
+            command_move(atoi(command_line[1]), 1);
+            return;
+        }
+        if (strcmp(command_line[0], "setMin") == 0){
              ESP_LOGI(TAG, "SET MIN");
             setPramamter(2, atoi(command_line[1]));
             saveParamters();
@@ -868,14 +870,14 @@ void command_handler(char * queue_value, int type){
             return;
 
         }
-        if (strncmp(command_line[0], "setMax" ,6) == 0){
+        if (strcmp(command_line[0], "setMax") == 0){
             ESP_LOGI(TAG, "SET MAX");
             setPramamter(3, atoi(command_line[1]));
             saveParamters();
             updateUdp();
             return;
         }
-        if (strncmp(command_line[0], "update" ,6) == 0){
+        if (strcmp(command_line[0], "update") == 0){
             updateUdp();
             return;
         }
