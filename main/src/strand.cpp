@@ -34,13 +34,14 @@ struct {
 } config;
 
 long currentPosition;
+int factor = 12; // wheel ratio steps per mm
+
 
 void command_move(int move, int type){
     //xQueueSendToBack(xQueue_stepper_command, (void *) &move, 0);
     stepper_command_t test_action;
     test_action.move = move;
     test_action.type = type;
-
     xQueueSendToBack(xQueue_stepper_command, (void *) &test_action, 0);            
 }
 
@@ -103,18 +104,28 @@ void stepper_task(void *args) {
     while(1) {
         if (xQueueReceive(xQueue_stepper_command, &stepper_commands, portMAX_DELAY)) {
             //if type 0 DONT record the position (relative)
+            ESP_LOGI(TAG, "Stepper Type %d", stepper_commands.type);
+            if (stepper_commands.type == 1){
+
+                stepper_commands.move = stepper_commands.move * factor;
+
+                if (stepper_commands.move > (device_stepper.max * factor)) stepper_commands.move  = (device_stepper.max * factor);
+                if (stepper_commands.move < (device_stepper.min * factor)) stepper_commands.move = (device_stepper.min * factor);
+
+                stepper_move = stepper_commands.move - currentPosition;
+                currentPosition = stepper_commands.move;
+
+                device_stepper.current = currentPosition;
+
+                ESP_LOGI(TAG, "Stepper Move : %ld Dif %ld : Current : %ld",stepper_move, stepper_commands.move, currentPosition);
+            }
             if (stepper_commands.type == 0){
-                ESP_LOGI(TAG, "Stepper Type %d", stepper_commands.type);
                 stepper_move = stepper_commands.move;
+                ESP_LOGI(TAG, "Stepper Move %ld : %ld", stepper_move, currentPosition);
             }
             //if type 1 record the position 
-            if (stepper_commands.type ==1){
-                ESP_LOGI(TAG, "Stepper Type %d", stepper_commands.type);
-                currentPosition = stepper_commands.move;
-                stepper_move = stepper_commands.move - currentPosition;
-            }
             //Print
-            ESP_LOGI(TAG, "Stepper Move %ld : %ld", stepper_commands.move, currentPosition);
+            
             // Set distance to move from comand variable
             stepper.move(stepper_move);
             // Run the stepper loop until we get to our destination

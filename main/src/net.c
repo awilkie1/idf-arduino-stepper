@@ -848,26 +848,21 @@ void command_handler(char * queue_value, int type){
         }
         if (strcmp(command_line[0], "ota") == 0){
             command_ota();
-            return;
         }
         if (strcmp(command_line[0], "reset") == 0){
             command_reset();
-            return;
         }
         if (strcmp(command_line[0], "stepperMove") == 0){
             command_move(atoi(command_line[1]), 0);
-            return;
         }
         if (strcmp(command_line[0], "stepperTranslate") == 0){
             command_move(atoi(command_line[1]), 1);
-            return;
         }
         if (strcmp(command_line[0], "setMin") == 0){
              ESP_LOGI(TAG, "SET MIN");
             setPramamter(2, atoi(command_line[1]));
             saveParamters();
             updateUdp();
-            return;
 
         }
         if (strcmp(command_line[0], "setMax") == 0){
