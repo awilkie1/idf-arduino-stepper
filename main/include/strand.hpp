@@ -15,7 +15,7 @@ extern QueueHandle_t xQueue_stepper_command; // This external reference has to b
 void init_strand();
 void stepper_task(void *args);
 
-void command_move(int move, int type); 
+void command_move(int move, int type, int min, int max); 
 
 #ifdef __cplusplus
   }

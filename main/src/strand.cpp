@@ -34,14 +34,17 @@ struct {
 } config;
 
 long currentPosition;
-int factor = 12; // wheel ratio steps per mm
+float factor = 11.8; // wheel ratio steps per mm
 
 
-void command_move(int move, int type){
+void command_move(int type, int move, int min, int max){
     //xQueueSendToBack(xQueue_stepper_command, (void *) &move, 0);
     stepper_command_t test_action;
     test_action.move = move;
     test_action.type = type;
+    test_action.min = min;
+    test_action.max = max;
+
     xQueueSendToBack(xQueue_stepper_command, (void *) &test_action, 0);            
 }
 
@@ -66,8 +69,8 @@ void init_strand() {
    driver.pwm_autoscale(true);     // Needed for stealthChop
 
    // Stepper Library Setup
-   stepper.setMaxSpeed(3200); // 100mm/s @ 80 steps/mm
-   stepper.setAcceleration(2500); // 2000mm/s^2
+   stepper.setMaxSpeed(2800); // 100mm/s @ 80 steps/mm
+   stepper.setAcceleration(2000); // 2000mm/s^2
    stepper.setEnablePin(EN_PIN);
    stepper.setPinsInverted(false, false, true);
    stepper.enableOutputs();
@@ -88,7 +91,7 @@ void init_strand() {
      * - If StealthChop is active while too fast, there will also be noise
      * For the 15:1 stepper, values between 70-120 is optimal 
     */
-    uint32_t thr = 120; // 70-120 is optimal
+    uint32_t thr = 80; // 70-120 is optimal
     driver.TPWMTHRS(thr);
 }
 
@@ -99,6 +102,7 @@ void stepper_task(void *args) {
     if (xQueue_stepper_command == NULL) ESP_LOGE(TAG, "Unable to create stepper command queue");
 
     long stepper_move = 0; // storage for incoming stepper command
+    int stepper_target = 0;
 
     ESP_LOGI(TAG, "Start Stepper Task");
     while(1) {
@@ -107,17 +111,23 @@ void stepper_task(void *args) {
             ESP_LOGI(TAG, "Stepper Type %d", stepper_commands.type);
             if (stepper_commands.type == 1){
 
-                stepper_commands.move = stepper_commands.move * factor;
+                if (stepper_commands.move  >= stepper_commands.max){
+                    ESP_LOGI(TAG, "MAX"); 
+                    stepper_target = stepper_commands.max;
+                }
+                else if (stepper_commands.move < stepper_commands.min) {
+                    ESP_LOGI(TAG, "MIN");
+                    stepper_target = stepper_commands.min;
+                }
+                else {
+                    stepper_target = stepper_commands.move;
+                }
+                stepper_move = (stepper_target - currentPosition) * factor;
 
-                if (stepper_commands.move > (device_stepper.max * factor)) stepper_commands.move  = (device_stepper.max * factor);
-                if (stepper_commands.move < (device_stepper.min * factor)) stepper_commands.move = (device_stepper.min * factor);
+                ESP_LOGI(TAG, "Stepper Move To : %ld Dif %ld : Current : %ld",stepper_commands.move, stepper_move, currentPosition);
 
-                stepper_move = stepper_commands.move - currentPosition;
-                currentPosition = stepper_commands.move;
-
-                device_stepper.current = currentPosition;
-
-                ESP_LOGI(TAG, "Stepper Move : %ld Dif %ld : Current : %ld",stepper_move, stepper_commands.move, currentPosition);
+                currentPosition = stepper_target;
+                 //save out and back to main = currentPosition;
             }
             if (stepper_commands.type == 0){
                 stepper_move = stepper_commands.move;
@@ -125,7 +135,7 @@ void stepper_task(void *args) {
             }
             //if type 1 record the position 
             //Print
-            
+            ESP_LOGI(TAG, "Stepper Move %ld", stepper_move);
             // Set distance to move from comand variable
             stepper.move(stepper_move);
             // Run the stepper loop until we get to our destination
