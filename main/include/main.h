@@ -70,6 +70,7 @@ typedef struct stepper {
 typedef struct stepper_command {
     int min;
     int max;
+    int speed;
     long move;
     int type;
 } stepper_command_t;

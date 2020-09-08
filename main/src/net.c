@@ -863,10 +863,10 @@ void command_handler(char * queue_value, int type){
             command_reset();
         }
         if (strcmp(command_line[0], "stepperMove") == 0){
-            command_move(0, atoi(command_line[1]),device_stepper.min, device_stepper.max);
+            command_move(0, atoi(command_line[1]),atoi(command_line[2]),device_stepper.min, device_stepper.max);
         }
         if (strcmp(command_line[0], "stepperTranslate") == 0){
-            command_move(1, atoi(command_line[1]),device_stepper.min, device_stepper.max);
+            command_move(1, atoi(command_line[1]), 2800, device_stepper.min, device_stepper.max);
         }
         if (strcmp(command_line[0], "setMin") == 0){
              ESP_LOGI(TAG, "SET MIN");
