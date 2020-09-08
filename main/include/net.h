@@ -41,15 +41,15 @@
   extern "C" {
 #endif
 
-QueueHandle_t xQueue_broadcast_task;
-QueueHandle_t xQueue_multicast_task;
-QueueHandle_t xQueue_tcp_task;
-QueueHandle_t xQueue_tcp_respond;
+extern QueueHandle_t xQueue_broadcast_task;
+extern QueueHandle_t xQueue_multicast_task;
+extern QueueHandle_t xQueue_tcp_task;
+extern QueueHandle_t xQueue_tcp_respond;
 
-tcp_task_action_t tcp_queue_value;
+extern tcp_task_action_t tcp_queue_value;
 
-location_t device_location;
-stepper_t device_stepper;
+extern location_t device_location;
+extern stepper_t device_stepper;
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 
 //tcp stuff 
@@ -82,8 +82,6 @@ void tcp_task_init();
 void command_handler(char * queue_value, int type);
 void server_ping(char* command);
 void server_message(char* command,char* message);
-void updateUdp();
-
 void command_ota(void);
 // all of your header goes above this
 

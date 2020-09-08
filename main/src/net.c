@@ -49,6 +49,16 @@ char broadcast_queue_value[COMMAND_ITEM_SIZE];
 
 char command_line[COMMAND_ITEMS][50];
 
+QueueHandle_t xQueue_broadcast_task;
+QueueHandle_t xQueue_multicast_task;
+QueueHandle_t xQueue_tcp_task;
+QueueHandle_t xQueue_tcp_respond;
+
+tcp_task_action_t tcp_queue_value;
+
+location_t device_location;
+stepper_t device_stepper;
+
 //NVS
 
 uint32_t my_handle;

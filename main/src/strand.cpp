@@ -4,6 +4,7 @@
 #include <HardwareSerial.h>
 #include <TMCStepper.h>
 #include <AccelStepper.h>
+#include "net.h"
 
 static const char *TAG = "STEPPER";
 
