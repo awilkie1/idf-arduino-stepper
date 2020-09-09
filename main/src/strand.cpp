@@ -24,7 +24,7 @@ const int uart_buffer_size = (1024 * 2);
 #define R_SENSE 0.11f
 
 //homiing buttion stuff
-#define HOME_PIN         19 // HOME
+#define HOME_PIN         34 // HOME
 
 TMC2208Stepper driver(&SerialPort, R_SENSE); 
 AccelStepper stepper = AccelStepper(stepper.DRIVER, STEP_PIN, DIR_PIN);
@@ -113,7 +113,7 @@ void init_strand(int bootPosition) {
     driver.TPWMTHRS(thr);
 
 
-   pinMode(button1.PIN, INPUT_PULLUP);
+   pinMode(button1.PIN, INPUT);
    attachInterrupt(button1.PIN, isr, FALLING);
 }
 
@@ -168,14 +168,14 @@ void stepper_task(void *args) {
             // Run the stepper loop until we get to our destination
             while(stepper.distanceToGo() != 0) {
                 // if (!button1.pressed){
-                // if (button1.pressed) {
-                //     Serial.printf("Button 1 has been pressed %u times\n", button1.numberKeyPresses);
-                //     button1.pressed = false;
-                //     //stepper.stop();
-                //     // stepper.currentPosition(0)
-                //     currentPosition = stepper_commands.min;
-                //     server_ping("home");//Sends the boot up message to the server
-                // }
+                if (button1.pressed) {
+                    Serial.printf("Button 1 has been pressed %u times\n", button1.numberKeyPresses);
+                    button1.pressed = false;
+                    //stepper.stop();
+                    // stepper.currentPosition(0)
+                    //currentPosition = stepper_commands.min;
+                    //server_ping("home");//Sends the boot up message to the server
+                }
 
                 // }
                 stepper.run();
