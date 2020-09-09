@@ -5,6 +5,7 @@
 #include <TMCStepper.h>
 #include <AccelStepper.h>
 #include "net.h"
+#include <driver/adc.h>
 
 static const char *TAG = "STEPPER";
 
@@ -24,7 +25,7 @@ const int uart_buffer_size = (1024 * 2);
 #define R_SENSE 0.11f
 
 //homiing buttion stuff
-#define HOME_PIN         19 // HOME
+#define HOME_PIN         36 // HOME
 
 TMC2208Stepper driver(&SerialPort, R_SENSE); 
 AccelStepper stepper = AccelStepper(stepper.DRIVER, STEP_PIN, DIR_PIN);
@@ -62,6 +63,18 @@ void command_move(int type, int move, int speed, int min, int max){
     test_action.max = max;
 
     xQueueSendToBack(xQueue_stepper_command, (void *) &test_action, 0);            
+}
+
+void sensor_task(void *args) {
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    adc1_config_channel_atten(ADC1_CHANNEL_0,ADC_ATTEN_DB_0);
+    int val = 0;
+    
+    while(1) {
+        val = adc1_get_raw(ADC1_CHANNEL_0);
+        Serial.println(val);
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
 }
 
 void init_strand(int bootPosition) {
@@ -168,14 +181,14 @@ void stepper_task(void *args) {
             // Run the stepper loop until we get to our destination
             while(stepper.distanceToGo() != 0) {
                 // if (!button1.pressed){
-                // if (button1.pressed) {
-                //     Serial.printf("Button 1 has been pressed %u times\n", button1.numberKeyPresses);
-                //     button1.pressed = false;
-                //     //stepper.stop();
-                //     // stepper.currentPosition(0)
-                //     currentPosition = stepper_commands.min;
-                //     server_ping("home");//Sends the boot up message to the server
-                // }
+                if (button1.pressed) {
+                    Serial.printf("Button 1 has been pressed %u times\n", button1.numberKeyPresses);
+                    button1.pressed = false;
+                    //stepper.stop();
+                    // stepper.currentPosition(0)
+                    currentPosition = stepper_commands.min;
+                    server_ping("home");//Sends the boot up message to the server
+                }
 
                 // }
                 stepper.run();
