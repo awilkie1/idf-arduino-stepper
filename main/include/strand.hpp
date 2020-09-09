@@ -14,6 +14,7 @@ extern QueueHandle_t xQueue_stepper_command; // This external reference has to b
 // ----FUNCTIONS----
 void init_strand(int bootPosition);
 void stepper_task(void *args);
+void sensor_task(void *args);
 
 void command_move(int move, int type, int speed, int min, int max); 
 
