@@ -52,11 +52,13 @@ void IRAM_ATTR isr() {
   button1.pressed = true;
 }
 
-void command_move(int type, int move, int min, int max){
+void command_move(int type, int move, int speed, int accel, int min, int max){
     //xQueueSendToBack(xQueue_stepper_command, (void *) &move, 0);
     stepper_command_t test_action;
     test_action.move = move;
     test_action.type = type;
+    test_action.speed = speed;
+    test_action.accel = accel;
     test_action.min = min;
     test_action.max = max;
 
@@ -77,7 +79,7 @@ void init_strand() {
    driver.I_scale_analog(false); // Use internal voltage reference
    driver.mstep_reg_select(1);  // necessary for TMC2208 to set microstep register with UART
    driver.toff(5);                 // Enables driver in software
-   driver.rms_current(800);        // Set motor RMS current
+   driver.rms_current(1000);        // Set motor RMS current
    driver.microsteps(2);          // Set microsteps to 1/16th
    driver.en_spreadCycle(false);   // Toggle spr
    driver.VACTUAL(0); // make sure velocity is set to 0
@@ -106,7 +108,7 @@ void init_strand() {
      * - If StealthChop is active while too fast, there will also be noise
      * For the 15:1 stepper, values between 70-120 is optimal 
     */
-    uint32_t thr = 140; // 70-120 is optimal
+    uint32_t thr = 100; // 70-120 is optimal
     driver.TPWMTHRS(thr);
 
     pinMode(button1.PIN, INPUT);
@@ -169,6 +171,8 @@ void stepper_task(void *args) {
                     button1.pressed = false;
                     server_ping("home");//Sends the boot up message to the server
                     stepper.stop();
+                    
+                    //stepper.move(200);
                 }
                 // }
                 stepper.run();
