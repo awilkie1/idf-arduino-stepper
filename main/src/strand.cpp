@@ -23,6 +23,9 @@ const int uart_buffer_size = (1024 * 2);
 // #define STEP_PIN         14 // Step  (Oliver)
 #define R_SENSE 0.11f
 
+//homiing buttion stuff
+#define HOME_PIN         34 // HOME
+
 TMC2208Stepper driver(&SerialPort, R_SENSE); 
 AccelStepper stepper = AccelStepper(stepper.DRIVER, STEP_PIN, DIR_PIN);
 constexpr uint32_t steps_per_mm = 80;
@@ -37,6 +40,17 @@ struct {
 long currentPosition;
 float factor = 11.8; // wheel ratio steps per mm
 
+struct Button {
+  const uint8_t PIN;
+  uint32_t numberKeyPresses;
+  bool pressed;
+};
+Button button1 = {HOME_PIN, 0, false};
+
+void IRAM_ATTR isr() {
+  button1.numberKeyPresses += 1;
+  button1.pressed = true;
+}
 
 void command_move(int type, int move, int min, int max){
     //xQueueSendToBack(xQueue_stepper_command, (void *) &move, 0);
@@ -92,8 +106,11 @@ void init_strand() {
      * - If StealthChop is active while too fast, there will also be noise
      * For the 15:1 stepper, values between 70-120 is optimal 
     */
-    uint32_t thr = 80; // 70-120 is optimal
+    uint32_t thr = 140; // 70-120 is optimal
     driver.TPWMTHRS(thr);
+
+    pinMode(button1.PIN, INPUT);
+    attachInterrupt(button1.PIN, isr, FALLING);
 }
 
 void stepper_task(void *args) {
@@ -107,23 +124,28 @@ void stepper_task(void *args) {
 
     ESP_LOGI(TAG, "Start Stepper Task");
     while(1) {
+
         if (xQueueReceive(xQueue_stepper_command, &stepper_commands, portMAX_DELAY)) {
             //if type 0 DONT record the position (relative)
-            ESP_LOGI(TAG, "Stepper Type %d", stepper_commands.type);
+            //ESP_LOGI(TAG, "Stepper Type %d", stepper_commands.type);
+
+            //stepper.setMaxSpeed(stepper_commands.speed); // 100mm/s @ 80 steps/mm
+
+
             if (stepper_commands.type == 1){
 
-                if (stepper_commands.move  >= stepper_commands.max){
-                    ESP_LOGI(TAG, "MAX"); 
-                    stepper_target = stepper_commands.max;
-                }
-                else if (stepper_commands.move < stepper_commands.min) {
+                if (stepper_commands.move <= stepper_commands.min) {
                     ESP_LOGI(TAG, "MIN");
                     stepper_target = stepper_commands.min;
+                }
+                else if (stepper_commands.move  >= stepper_commands.max){
+                    ESP_LOGI(TAG, "MAX"); 
+                    stepper_target = stepper_commands.max;
                 }
                 else {
                     stepper_target = stepper_commands.move;
                 }
-                stepper_move = (stepper_target - currentPosition) * factor;
+                stepper_move = (stepper_target - currentPosition) * factor;//works out based on mm
 
                 ESP_LOGI(TAG, "Stepper Move To : %ld Dif %ld : Current : %ld",stepper_commands.move, stepper_move, currentPosition);
 
@@ -141,6 +163,14 @@ void stepper_task(void *args) {
             stepper.move(stepper_move);
             // Run the stepper loop until we get to our destination
             while(stepper.distanceToGo() != 0) {
+                // if (!button1.pressed){
+                if (button1.pressed) {
+                    Serial.printf("Button 1 has been pressed %u times\n", button1.numberKeyPresses);
+                    button1.pressed = false;
+                    server_ping("home");//Sends the boot up message to the server
+                    stepper.stop();
+                }
+                // }
                 stepper.run();
                 // vTaskDelay(1);
             }
