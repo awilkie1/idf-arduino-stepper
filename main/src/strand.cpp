@@ -1,7 +1,7 @@
 
 
 #include "Strand.hpp"
-//#include <HardwareSerial.h>
+#include <HardwareSerial.h>
 #include <SPI.h>
 #include <TMCStepper.h>
 #include <AccelStepper.h>
@@ -13,7 +13,12 @@ QueueHandle_t xQueue_stepper_command; // Must redefine here
 
 stepper_command_t stepper_commands;
 
-// HardwareSerial SerialPort(2);
+//uninitalised pointers to SPI objects
+static const int spiClk = 1000000; // 1 MHz
+SPIClass * vspi = NULL;
+//SPIClass SPI(VSPI);
+
+//HardwareSerial SerialPort(2);
 const int uart_buffer_size = (1024 * 2);
 #define RXD2 16
 #define TXD2 17
@@ -21,12 +26,15 @@ const int uart_buffer_size = (1024 * 2);
 #define DIR_PIN          14 // Direction
 #define STEP_PIN         12 // Step
 
-#define CS_PIN 5 // Chip select
+// #define CS_PIN              5   // Chip select
+// #define MOSI_PIN            23 // Software Master Out Slave In (MOSI)
+// #define MISO_PIN            19 // Software Master In Slave Out (MISO)
+// #define SCK_PIN             18 // Software Slave Clock (SCK)
 
-#define MOSI          23 // Software Master Out Slave In (MOSI)
-#define MISO          19 // Software Master In Slave Out (MISO)
-#define SCK           18 // Software Slave Clock (SCK)
-
+#define CS_PIN              SS   // Chip select
+#define MOSI_PIN            MOSI // Software Master Out Slave In (MOSI)
+#define MISO_PIN            MISO // Software Master In Slave Out (MISO)
+#define SCK_PIN             SCK // Software Slave Clock (SCK)
 
 // #define DIR_PIN          19 // Direction (Oliver)
 // #define STEP_PIN         14 // Step  (Oliver)
@@ -36,8 +44,8 @@ const int uart_buffer_size = (1024 * 2);
 #define HOME_PIN         34 // HOME
 
 ////TMC2208Stepper driver(&SerialPort, R_SENSE); 
-TMC5160Stepper driver(CS_PIN, R_SENSE);
-//TMC5160Stepper driver(CS_PIN, R_SENSE, MOSI, MISO, SCK);
+//TMC5160Stepper driver(CS_PIN, R_SENSE);
+TMC5160Stepper driver(CS_PIN, R_SENSE, MOSI, MISO, SCK);
 
 AccelStepper stepper = AccelStepper(stepper.DRIVER, STEP_PIN, DIR_PIN);
 constexpr uint32_t steps_per_mm = 80;
@@ -79,16 +87,28 @@ void command_move(int type, int move, int speed, int accel, int min, int max){
 
 void init_strand() {
     // Start UART and TMC2208
+   // Driver Setup
+
+   // SPI.begin();//TMC5160 SPI Begin
+
+   vspi = new SPIClass(VSPI);
+   vspi->begin();
+
+   //SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, CS_PIN);
+
+   //vspi = new SPIClass(VSPI);
+   //vspi->begin();
+
+   //SerialPort.begin(115200);
    pinMode(EN_PIN, OUTPUT);
    pinMode(STEP_PIN, OUTPUT);
    pinMode(DIR_PIN, OUTPUT);
-   pinMode(CS_PIN, OUTPUT);
-   pinMode(MISO, INPUT_PULLUP);
    digitalWrite(EN_PIN, LOW);      // Enable driver in hardware
-   
-   // Driver Setup
-   SPI.begin();//TMC5160 SPI Begin
-   //SerialPort.begin(115200);
+
+   pinMode(CS_PIN, OUTPUT);
+   pinMode(SCK_PIN, OUTPUT);
+   pinMode(MOSI_PIN, OUTPUT);
+   pinMode(MISO_PIN, INPUT);
 
    driver.begin();//Begin TMC
 
@@ -104,9 +124,9 @@ void init_strand() {
    //driver.VACTUAL(0); // make sure velocity is set to 0
    //driver.pwm_autoscale(true);     // Needed for stealthChop
    driver.en_pwm_mode(1);      // Enable extremely quiet stepping
-  // driver.pwm_autoscale(1);
+   // driver.pwm_autoscale(1);
 
-
+   
    //Driver Tests 
    Serial.print("\nTesting connection...");
    uint8_t result = driver.test_connection();
