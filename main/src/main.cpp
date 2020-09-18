@@ -50,7 +50,7 @@ TaskHandle_t multicast_task_handle = NULL;
 TaskHandle_t broadcast_task_handle = NULL;
 TaskHandle_t tcp_task_handle = NULL;
 TaskHandle_t stepper_task_handle = NULL;
-TaskHandle_t sensor_task_handle = NULL;
+//TaskHandle_t sensor_task_handle = NULL;
 
 QueueSetHandle_t queue_set;
 QueueSetMemberHandle_t queue_set_member;
@@ -92,7 +92,7 @@ extern "C" void app_main() {
 
    xTaskCreatePinnedToCore(&stepper_task, "stepper_task", 2*1024, NULL, 2, &stepper_task_handle, 0);
 
-   xTaskCreatePinnedToCore(&sensor_task, "sensor_task", 1024, NULL, 3, &sensor_task_handle, 0);
+   //xTaskCreatePinnedToCore(&sensor_task, "sensor_task", 1024, NULL, 3, &sensor_task_handle, 0);
 
    String inString = ""; // String to hold input
    int inNum = 0;

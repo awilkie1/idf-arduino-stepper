@@ -38,6 +38,8 @@ struct {
     int8_t hysteresis_end = 12;     // [-3..12]
 } config;
 
+bool home = false;
+
 struct Button {
   const uint8_t PIN;
   uint32_t numberKeyPresses;
@@ -65,17 +67,17 @@ void command_move(int type, int move, int speed, int min, int max){
     xQueueSendToBack(xQueue_stepper_command, (void *) &test_action, 0);            
 }
 
-void sensor_task(void *args) {
-    adc1_config_width(ADC_WIDTH_BIT_12);
-    adc1_config_channel_atten(ADC1_CHANNEL_0,ADC_ATTEN_DB_0);
-    int val = 0;
+// void sensor_task(void *args) {
+//     adc1_config_width(ADC_WIDTH_BIT_12);
+//     adc1_config_channel_atten(ADC1_CHANNEL_0,ADC_ATTEN_DB_0);
+//     int val = 0;
     
-    while(1) {
-        val = adc1_get_raw(ADC1_CHANNEL_0);
-        Serial.println(val);
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
-}
+//     while(1) {
+//         val = adc1_get_raw(ADC1_CHANNEL_0);
+//         //Serial.println(val);
+//         vTaskDelay(pdMS_TO_TICKS(10));
+//     }
+// }
 
 void init_strand(int bootPosition) {
     // Start UART and TMC2208
@@ -91,7 +93,7 @@ void init_strand(int bootPosition) {
    driver.I_scale_analog(false); // Use internal voltage reference
    driver.mstep_reg_select(1);  // necessary for TMC2208 to set microstep register with UART
    driver.toff(5);                 // Enables driver in software
-   driver.rms_current(950);        // Set motor RMS current
+   driver.rms_current(800);        // Set motor RMS current
    driver.microsteps(2);          // Set microsteps to 1/16th
    driver.en_spreadCycle(false);   // Toggle spr
    driver.VACTUAL(0); // make sure velocity is set to 0
@@ -122,7 +124,7 @@ void init_strand(int bootPosition) {
      * - If StealthChop is active while too fast, there will also be noise
      * For the 15:1 stepper, values between 70-120 is optimal 
     */
-    uint32_t thr = 140; // 70-120 is optimal
+    uint32_t thr = 120; // 70-120 is optimal
     driver.TPWMTHRS(thr);
 
 
@@ -180,17 +182,39 @@ void stepper_task(void *args) {
             stepper.move(stepper_move);
             // Run the stepper loop until we get to our destination
             while(stepper.distanceToGo() != 0) {
-                // if (!button1.pressed){
-                // if (button1.pressed) {
-                //     Serial.printf("Button 1 has been pressed %u times\n", button1.numberKeyPresses);
-                //     button1.pressed = false;
-                //     //stepper.stop();
-                //     // stepper.currentPosition(0)
-                //     currentPosition = stepper_commands.min;
-                //     server_ping("home");//Sends the boot up message to the server
+                // if (button1.pressed){ 
+                //     if (home==false) {//Home Senced 
+                //         Serial.printf("SENCED");
+                //         home = true; 
+                //     }
+                //     if (home==true){//Alowing to be wound out
+                //         stepper.setCurrentPosition(0);
+                //         stepper.runToNewPosition(400);
+                //     }
+                // }
+                // if (!button1.pressed){ //setting how after windout
+                //     if (home==true) {
+                //         home=false; 
+                //         Serial.printf("Home Set");
+                //         stepper.setCurrentPosition(0);
+                //     }
+                //     if (home==false) {
+                //         stepper.run();
+                //     }
                 // }
 
-                // }
+                if (button1.pressed){ 
+                    if (home==false) {//Home Senced 
+                        Serial.printf("SENCED");
+                        home = true; 
+                        button1.pressed = false; //Needed to flip off
+                    }
+                    if (home==true){//Alowing to be wound out
+                        stepper.setCurrentPosition(0);
+                        stepper.runToNewPosition(400);
+                        home=false;
+                    }
+                }
                 stepper.run();
                 // vTaskDelay(1);
             }
