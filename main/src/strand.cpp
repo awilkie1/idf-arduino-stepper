@@ -91,15 +91,15 @@ void init_strand(int bootPosition) {
    // Driver Setup
    SerialPort.begin(115200);
    driver.begin();
-   driver.pdn_disable(true);     // Use PDN/UART pin for communication
-   driver.I_scale_analog(false); // Use internal voltage reference
-   driver.mstep_reg_select(1);  // necessary for TMC2208 to set microstep register with UART
-   driver.toff(5);                 // Enables driver in software
-   driver.rms_current(950);        // Set motor RMS current
-   driver.microsteps(MICROSTEPPING);          // Set microsteps to 1/16th
-   driver.en_spreadCycle(false);   // Toggle spr
-   driver.VACTUAL(0); // make sure velocity is set to 0
-   driver.pwm_autoscale(true);     // Needed for stealthChop
+   driver.pdn_disable(true);               // Use PDN/UART pin for communication
+   driver.I_scale_analog(false);           // Use internal voltage reference
+   driver.mstep_reg_select(1);             // necessary for TMC2208 to set microstep register with UART
+   driver.toff(3);                         // Enables driver in software
+   driver.rms_current(1200);               // Set motor RMS current
+   driver.microsteps(MICROSTEPPING);       // Set microsteps to 1/16th
+   driver.en_spreadCycle(false);           // Toggle spr
+   driver.VACTUAL(0);                      // make sure velocity is set to 0
+   driver.pwm_autoscale(true);             // Needed for stealthChop
 
    // Stepper Library Setup
    stepper.setMaxSpeed(1400*MICROSTEPPING); // 100mm/s @ 80 steps/mm
