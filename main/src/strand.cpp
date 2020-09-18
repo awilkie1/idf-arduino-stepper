@@ -16,11 +16,7 @@ stepper_command_t stepper_commands;
 
 //uninitalised pointers to SPI objects
 static const int spiClk = 1000000; // 1 MHz
-// SPIClass * vspi = NULL;
-// VSPI
-// SPIClass SPI(VSPI);
 
-//HardwareSerial SerialPort(2);
 const int uart_buffer_size = (1024 * 2);
 #define RXD2 16
 #define TXD2 17
@@ -34,33 +30,13 @@ const int uart_buffer_size = (1024 * 2);
 #define sck_pin            18 // Software Slave Clock (SCK)
 #define DRIVER_ADDRESS 0b00
 
-// #define CS_PIN              SS   // Chip select
-// #define MOSI_PIN            MOSI // Software Master Out Slave In (MOSI)
-// #define MISO_PIN            MISO // Software Master In Slave Out (MISO)
-// #define SCK_PIN             SCK // Software Slave Clock (SCK)
-// #define writeMOSI_H digitalWrite(mosi_pin, HIGH)
-// #define writeMOSI_L digitalWrite(mosi_pin, LOW)
-// #define writeSCK_H digitalWrite(sck_pin, HIGH)
-// #define writeSCK_L digitalWrite(sck_pin, LOW)
-// #define readMISO digitalRead(miso_pin)
-
-// #define DIR_PIN          19 // Direction (Oliver)
-// #define STEP_PIN         14 // Step  (Oliver)
 //#define R_SENSE 0.11f //TMC2208
 #define R_SENSE 0.075f//TMC5160
+
 //homiing buttion stuff
 #define HOME_PIN         34 // HOME
 
-////TMC2208Stepper driver(&SerialPort, R_SENSE); 
-// SPIClass vspi = SPIClass(VSPI);;
-// SW_SPIClass SW_SPI(MOSI_PIN, MISO_PIN, SCK_PIN);
 TMC5160Stepper driver(cs_pin, R_SENSE);
-// TMC5160Stepper driver(cs_pin, R_SENSE, mosi_pin, miso_pin, sck_pin);
-// TMC5160Stepper driver(vspi, CS_PIN, R_SENSE);
-// TMC5160Stepper driver(SW_SPI, CS_PIN, R_SENSE);
-// TMC5160Stepper driver(CS_PIN, R_SENSE);
-// TMC5160Stepper driver = TMC5160Stepper(CS_PIN, R_SENSE);
-// TMC5160Stepper driver = TMC5160Stepper(CS_PIN, R_SENSE, MOSI_PIN, MOSI_PIN, SCK_PIN);
 
 AccelStepper stepper = AccelStepper(stepper.DRIVER, STEP_PIN, DIR_PIN);
 constexpr uint32_t steps_per_mm = 80;
@@ -101,87 +77,25 @@ void command_move(int type, int move, int speed, int accel, int min, int max){
 }
 
 void init_strand() {
-    // Start UART and TMC2208
-   // Driver Setup
-
-    // void SPIClass::begin(int8_t sck, int8_t miso, int8_t mosi, int8_t ss)
-//    SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, CS_PIN);//TMC5160 SPI Begin
-
-//    vspi = new SPIClass(VSPI);
-//    vspi->begin();
-
-   //SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, CS_PIN);
-//    SPI.begin();
-//    SPI.setBitOrder(MSBFIRST);
-//     SPI.setDataMode(SPI_MODE0);
-//     SPI.setClockDivider(SPI_CLOCK_DIV8); // divide the clock by 8=2 MHz @ESP32
-
-   //vspi = new SPIClass(VSPI);
-
-   //SerialPort.begin(115200);
    pinMode(EN_PIN, OUTPUT);
    pinMode(DIR_PIN, OUTPUT);
    pinMode(STEP_PIN, OUTPUT);
-//    pinMode(CS_PIN, OUTPUT);
-//    digitalWrite(CS_PIN, HIGH);
-//    digitalWrite(EN_PIN, HIGH);      // Enable driver in hardware
-    digitalWrite(EN_PIN, LOW); //deactivate driver (LOW active)
-    // digitalWrite(DIR_PIN, LOW); //LOW or HIGH
-    // digitalWrite(STEP_PIN, LOW);
-    // digitalWrite(CS_PIN, HIGH);
-//    digitalWrite(EN_PIN, LOW);      // Enable driver in hardware
-    
+   digitalWrite(EN_PIN, LOW); //deactivate driver (LOW active)
 
-
-//    pinMode(CS_PIN, OUTPUT);
-//    pinMode(SCK_PIN, OUTPUT);
-//    pinMode(MOSI_PIN, OUTPUT);
-
-    // SPI.begin();
-    // SPI.setFrequency(16000000/8);
-    // vspi.begin();
-    // vspi.setFrequency(16000000/8);
-    //SPI.begin(SCK_PIN, MISO_PIN, MOSI_PIN, CS_PIN);
    SPI.begin(); 
-//    SPI.begin(sck_pin, miso_pin, mosi_pin, cs_pin);
-//    pinMode(CS_PIN, OUTPUT);
-//    digitalWrite(CS_PIN, LOW);
-//    SPI.setFrequency(100000);
-//    SPI.beginTransaction(SPISettings(100000, MSBFIRST, SPI_MODE0));
-//     while (true) {
-//         SPI.transfer(0x9F);
-//         vTaskDelay(10);
-//     }
-//    vTaskDelay(pdMS_TO_TICKS(2000));
-//    SPI.transfer(0x9F);
-
-//    pinMode(MISO_PIN, INPUT_PULLUP);
-   driver.begin();//Begin TMC
-    // SW_SPI.init();
-    // SW_SPI.begin();
-//    driver.push();
-
-//    driver.pdn_disable(true);     // Use PDN/UART pin for communication
-   //driver.I_scale_analog(false); // Use internal voltage reference
-   //driver.mstep_reg_select(1);  // necessary for TMC2208 to set microstep register with UART
-   //driver.toff(5);                 // Enables driver in software
+   driver.begin();//Begin TMC             
    int err = driver.GSTAT();
    ESP_LOGW(TAG, "Driver stat: %i", err);
-//    driver.toff(0);
+
    driver.reset();
-   driver.toff(4);
+   driver.toff(4);                  // Enables driver in software
    driver.blank_time(24);
-   driver.rms_current(400);        // Set motor RMS current
-   driver.microsteps(16);          // Set microsteps to 1/16th
-   //driver.en_spreadCycle(false);   // Toggle spr
-   //driver.VACTUAL(0); // make sure velocity is set to 0
-   //driver.pwm_autoscale(true);     // Needed for stealthChop
+   driver.rms_current(800);        // Set motor RMS current
+   driver.microsteps(8);          // Set microsteps to 1/16th
    driver.en_pwm_mode(1);      // Enable extremely quiet stepping
-   // driver.pwm_autoscale(1);
-    if (driver.drv_err()) {
-        ESP_LOGW(TAG, "Driver ERROR");
-    }
-   
+   if (driver.drv_err()) {
+       ESP_LOGW(TAG, "Driver ERROR");
+   }
    //Driver Tests 
    ESP_LOGI(TAG,"\nTesting connection...");
    uint8_t result = driver.test_connection();
@@ -202,10 +116,6 @@ void init_strand() {
     server_ping("ERROR");//Sends the boot up message to the server
 
    }
-
-   //    uint8_t result_1 = driver.test_connection();
-   //    ESP_LOGI(TAG, "Driver: %i", result_1);
-
     /* ----THRESHOLD----
      * Changing the 'thr' variable raises or lowers the velocity at which the stepper motor switches between StealthChop and SpreadCycle
      * - Low values results in SpreadCycle being activated at lower velocities
@@ -214,9 +124,8 @@ void init_strand() {
      * - If StealthChop is active while too fast, there will also be noise
      * For the 15:1 stepper, values between 70-120 is optimal 
     */
-    uint32_t thr = 100; // 70-120 is optimal
-    driver.TPWMTHRS(thr);
-
+   uint32_t thr = 100; // 70-120 is optimal
+   driver.TPWMTHRS(thr);
 
    // Stepper Library Setup
    stepper.setMaxSpeed(1600); // 100mm/s @ 80 steps/mm
@@ -225,15 +134,9 @@ void init_strand() {
    stepper.setPinsInverted(false, false, true);
    stepper.enableOutputs();
 
-   // while(SerialPort.available()) {
-   //  ESP_LOGI(TAG, "Serial read: %c", char(SerialPort.read()));
-   //  vTaskDelay(100);
-   // }
-
     //SENSOR
     pinMode(button1.PIN, INPUT);
     attachInterrupt(button1.PIN, isr, FALLING);
-    // int cmd = 5000;
     
 }
 

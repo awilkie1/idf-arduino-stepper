@@ -96,25 +96,8 @@ extern "C" void app_main() {
    int inNum = 0;
    
    // void command_move(int type, int move, int speed, int accel, int min, int max){
-   command_move(0, 10000, 1600, 3000, 0, 40000);  
-   // int commands[] = {5000, -10000, 5000, 0, 20000, 0, -20000, 20000, 15000, 0};
-   // for (int i = 0; i<10; i++) {
-   //    xQueueSendToBack(xQueue_stepper_command, (void *) &commands[i], 0);
-   //    vTaskDelay(pdMS_TO_TICKS(10));
-   // }
-
-   // while(1) {
-   //    // while (Serial.available() == 0) {
-   //    //    vTaskDelay(pdMS_TO_TICKS(100));
-   //    // };
-   //    if (Serial.available() > 0) {
-   //       int val = Serial.parseInt();
-   //       ESP_LOGW(TAG, "Number Input: %i", val);
-   //       xQueueSendToBack(xQueue_stepper_command, (void *) &val, 0);
-   //    }
-   //    vTaskDelay(pdMS_TO_TICKS(100));
-   // }
-
+   //command_move(0, 10000, 1600, 3000, 0, 40000);  
+   
    queue_set = xQueueCreateSet(3);                    // Create QueueSet
    vTaskDelay(10);
    // Add all of the networking queue to the set
