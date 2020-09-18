@@ -90,7 +90,7 @@ void init_strand() {
    driver.reset();
    driver.toff(4);                  // Enables driver in software
    driver.blank_time(24);
-   driver.rms_current(800);        // Set motor RMS current
+   driver.rms_current(1500);        // Set motor RMS current
    driver.microsteps(8);          // Set microsteps to 1/16th
    driver.en_pwm_mode(1);      // Enable extremely quiet stepping
    if (driver.drv_err()) {
@@ -157,7 +157,8 @@ void stepper_task(void *args) {
             //if type 0 DONT record the position (relative)
             //ESP_LOGI(TAG, "Stepper Type %d", stepper_commands.type);
 
-            //stepper.setMaxSpeed(stepper_commands.speed); // 100mm/s @ 80 steps/mm
+            stepper.setMaxSpeed(stepper_commands.speed); // 100mm/s @ 80 steps/mm
+            stepper.setAcceleration(stepper_commands.accel); // 100mm/s @ 80 steps/mm
 
 
             if (stepper_commands.type == 1){
