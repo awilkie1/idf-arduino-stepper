@@ -10,6 +10,7 @@
    - All additional source files in the src folder
    - All additional header files in the include folder
 */
+// #define TMC_USE_SW_SPI
 
 #include "main.h"
 
@@ -56,7 +57,7 @@ QueueSetMemberHandle_t queue_set_member;
 
 extern "C" void app_main() {    
       
-   Serial.begin(115200);
+   // Serial.begin(115200);
     esp_log_level_set("*", ESP_LOG_INFO);
     esp_log_level_set(TAG, ESP_LOG_INFO);
    
@@ -88,11 +89,14 @@ extern "C" void app_main() {
    server_ping("boot");//Sends the boot up message to the server
 
    init_strand(); // Start the stepper motor system
+   vTaskDelay(pdMS_TO_TICKS(1000));
    xTaskCreatePinnedToCore(&stepper_task, "stepper_task", 2*1024, NULL, 2, &stepper_task_handle, 0);
 
    String inString = ""; // String to hold input
    int inNum = 0;
-
+   
+   // void command_move(int type, int move, int speed, int accel, int min, int max){
+   command_move(0, 10000, 1600, 3000, 0, 40000);  
    // int commands[] = {5000, -10000, 5000, 0, 20000, 0, -20000, 20000, 15000, 0};
    // for (int i = 0; i<10; i++) {
    //    xQueueSendToBack(xQueue_stepper_command, (void *) &commands[i], 0);
@@ -117,6 +121,8 @@ extern "C" void app_main() {
    xQueueAddToSet(xQueue_multicast_task, queue_set);
    xQueueAddToSet(xQueue_broadcast_task, queue_set);
    xQueueAddToSet(xQueue_tcp_task, queue_set);
+
+   ESP_LOGI(TAG,"Startup complete");
 
    // Block the task until we receive a value from any of the queues
    while ((queue_set_member = xQueueSelectFromSet(queue_set, portMAX_DELAY))) {

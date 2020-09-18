@@ -157,7 +157,7 @@ CONFIG_MONITOR_BAUD=115200
 #
 # Example Configuration
 #
-CONFIG_WIFI_SSID="_bloom"
+CONFIG_WIFI_SSID="_bloom_strand"
 CONFIG_WIFI_PASSWORD="sqU1d0ak"
 CONFIG_FIRMWARE_UPGRADE_URL="http://10.0.2.10:8888/bloom/code/firmware.bin"
 
