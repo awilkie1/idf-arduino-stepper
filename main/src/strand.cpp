@@ -34,6 +34,8 @@ TMC2209Stepper driver(&SerialPort, R_SENSE , DRIVER_ADDRESS);
 AccelStepper stepper = AccelStepper(stepper.DRIVER, STEP_PIN, DIR_PIN);
 constexpr uint32_t steps_per_mm = 80;
 
+bool home = false;
+
 struct {
     uint8_t blank_time = 16;        // [16, 24, 36, 54]
     uint8_t off_time = 1;           // [1..15]
@@ -202,17 +204,18 @@ void stepper_task(void *args) {
             stepper.move(stepper_move);
             // Run the stepper loop until we get to our destination
             while(stepper.distanceToGo() != 0) {
-                // if (!button1.pressed){
-                // if (button1.pressed) {
-                //     Serial.printf("Button 1 has been pressed %u times\n", button1.numberKeyPresses);
-                //     button1.pressed = false;
-                //     //stepper.stop();
-                //     // stepper.currentPosition(0)
-                //     currentPosition = stepper_commands.min;
-                //     server_ping("home");//Sends the boot up message to the server
-                // }
-
-                // }
+                 if (button1.pressed){ 
+                    if (home==false) {//Home Senced 
+                        Serial.printf("SENCED");
+                        home = true; 
+                        button1.pressed = false; //Needed to flip off
+                    }
+                    if (home==true){//Alowing to be wound out
+                        stepper.setCurrentPosition(0);
+                        stepper.runToNewPosition(400);
+                        home=false;
+                    }
+                }
                 stepper.run();
                 // vTaskDelay(1);
             }
