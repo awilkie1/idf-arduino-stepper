@@ -65,6 +65,7 @@ typedef struct stepper {
     int32_t min;
     int32_t max;
     int32_t target;
+    int32_t number;
 } stepper_t;
 
 typedef struct stepper_command {

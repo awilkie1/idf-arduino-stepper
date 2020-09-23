@@ -56,7 +56,8 @@ void IRAM_ATTR isr() {
 }
 
 long currentPosition;
-float factor = 11.8; // wheel ratio steps per mm
+//float factor = 11.8; // wheel ratio steps per mm
+float factor = 22; // wheel ratio steps per mm
 
 void command_move(int type, int move, int speed, int accel, int min, int max){
     //xQueueSendToBack(xQueue_stepper_command, (void *) &move, 0);
@@ -205,15 +206,14 @@ void stepper_task(void *args) {
             // Run the stepper loop until we get to our destination
             while(stepper.distanceToGo() != 0) {
                  if (button1.pressed){ 
-                    if (home==false) {//Home Senced 
+                    if (home==true) {//Alowing to be wound out
+                        stepper.setCurrentPosition(0);
+                        stepper.runToNewPosition(600);
+                        home=false;
+                    } else {//Home Senced 
                         Serial.printf("SENCED");
                         home = true; 
                         button1.pressed = false; //Needed to flip off
-                    }
-                    if (home==true){//Alowing to be wound out
-                        stepper.setCurrentPosition(0);
-                        stepper.runToNewPosition(400);
-                        home=false;
                     }
                 }
                 stepper.run();
