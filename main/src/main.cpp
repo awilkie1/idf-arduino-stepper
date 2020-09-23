@@ -92,7 +92,7 @@ extern "C" void app_main() {
 
    xTaskCreatePinnedToCore(&stepper_task, "stepper_task", 2*1024, NULL, 3, &stepper_task_handle, 0);
 
-   // xTaskCreatePinnedToCore(&sensor_task, "sensor_task", 1024, NULL, 3, &sensor_task_handle, 0);
+   //xTaskCreatePinnedToCore(&sensor_task, "sensor_task", 1024, NULL, 3, &sensor_task_handle, 0);
 
    String inString = ""; // String to hold input
    int inNum = 0;
