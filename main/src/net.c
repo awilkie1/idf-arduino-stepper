@@ -883,17 +883,28 @@ void wave_task(void *args) {
    vTaskDelay(pdMS_TO_TICKS(delay));
 
     while(1) {
-        command_move(0, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]),device_stepper.min, device_stepper.max);
+        command_move(wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
         vTaskDelay(pdMS_TO_TICKS(10));
     }
 }
 
-void wave_command(int x, int y, int z, int speed){
+void wave_command(int x, int y, int z, int speed, int type, int move, int stepper_speed, int accel, int min, int max){
     wave_t wave_action;
     wave_action.x = x;
     wave_action.y = y;
     wave_action.z = z;
     wave_action.speed = speed;
+
+    stepper_command_t stepper_action;
+    stepper_action.move = move;
+    stepper_action.type = type;
+    stepper_action.speed = stepper_speed;
+    stepper_action.accel = accel;
+    stepper_action.min = min;
+    stepper_action.max = max;
+
+    wave_action.wave_stepper = stepper_action;
+
     xQueueSendToBack(xQueue_wave_task, (void *) &wave_action, 0);            
 
 }
@@ -925,6 +936,9 @@ void command_handler(char * queue_value, int type){
             int selectedCommand = device_stepper.number + 2;
             command_move(1, atoi(command_line[selectedCommand]), atoi(command_line[1]), atoi(command_line[2]), device_stepper.min, device_stepper.max);
             ESP_LOGI(TAG,"STEPPER NUMBER MOVE %d : %d", selectedCommand, atoi(command_line[selectedCommand]));
+        }
+        if (strcmp(command_line[0], "stepperWave") == 0){//Move to location
+            wave_command(atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), atoi(command_line[4]), atoi(command_line[5]), atoi(command_line[6]), atoi(command_line[7]), atoi(command_line[8]), atoi(command_line[9]), atoi(command_line[10]));       
         }
         //SETTING PARAMTERS UDP
         if (strcmp(command_line[0], "setMin") == 0){
