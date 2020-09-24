@@ -60,6 +60,13 @@ typedef struct location {
     int32_t z;
 } location_t;
 
+typedef struct wave {
+    int32_t x;
+    int32_t y;
+    int32_t z;
+    int32_t speed;
+} wave_t;
+
 typedef struct stepper {
     int32_t current;
     int32_t min;
