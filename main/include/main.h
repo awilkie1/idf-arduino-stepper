@@ -60,13 +60,6 @@ typedef struct location {
     int32_t z;
 } location_t;
 
-typedef struct wave {
-    int32_t x;
-    int32_t y;
-    int32_t z;
-    int32_t speed;
-} wave_t;
-
 typedef struct stepper {
     int32_t current;
     int32_t min;
@@ -88,6 +81,14 @@ typedef struct {
    int   action;
    char  action_value[COMMAND_ITEM_SIZE];
 } tcp_task_action_t;
+
+typedef struct wave {
+    int32_t x;
+    int32_t y;
+    int32_t z;
+    int32_t speed;
+    stepper_command_t wave_stepper;
+} wave_t;
 
 #ifdef __cplusplus
   }
