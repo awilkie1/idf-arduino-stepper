@@ -136,15 +136,15 @@ void init_strand(int bootPosition) {
     ESP_LOGI(TAG,"Likely cause: ");
 
     switch(result) {
-        case 0: ESP_LOGW(TAG,"SUCCESS"); break;
-        case 1: ESP_LOGW(TAG,"loose connection"); break;
-        case 2: ESP_LOGW(TAG,"no power"); break;
+        case 0: ESP_LOGW(TAG,"SUCCESS");break;
+        case 1: ESP_LOGW(TAG,"loose connection"); server_ping("ERROR : Lose Connection");break;
+        case 2: ESP_LOGW(TAG,"no power"); server_ping("ERROR : No Power"); break;
         default: ESP_LOGW(TAG,"Default. result: %i", result); break;
     }
     ESP_LOGI(TAG,"Fix the problem and reset board.");
     // We need this delay or messages above don't get fully printed out
     delay(100);
-    server_ping("ERROR");//Sends the boot up message to the server
+    //server_ping("ERROR");//Sends the boot up message to the server
 
     }
 

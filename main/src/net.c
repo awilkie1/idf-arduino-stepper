@@ -54,6 +54,9 @@ QueueHandle_t xQueue_multicast_task;
 QueueHandle_t xQueue_tcp_task;
 QueueHandle_t xQueue_tcp_respond;
 
+QueueHandle_t xQueue_wave_task;
+wave_t wave;
+
 tcp_task_action_t tcp_queue_value;
 
 location_t device_location;
@@ -849,6 +852,51 @@ void updateUdp(){
     sendMessage(cmd, respond);
 }
 
+int deviceDistanceSpeed(int x, int y, int z, int s){
+
+  int64_t x_Square = device_location.x - x;
+  int64_t y_Square = device_location.y - y;
+  int64_t z_Square = device_location.z - z;
+
+  int64_t distance = (int64_t)abs(sqrtf(pow(x_Square, 2)  + pow(y_Square, 2) + pow(z_Square, 2)));
+
+  float speed = (float)(s / 10.0);
+
+  ESP_LOGI(TAG, "Speed %f", speed);
+
+  float distanceFromStart = (float)( distance  / speed);
+
+  ESP_LOGI(TAG, "Distance From Start Float %f", distanceFromStart);
+
+  // int64_t distanceFromStart = (int64_t)( distance  / (s / 10));
+  // ESP_LOGI(TAG, "Distance From Start %llu", distanceFromStart);
+
+  return distanceFromStart;
+}
+
+void wave_task(void *args) {
+
+   xQueue_wave_task = xQueueCreate(10, sizeof(wave_t));
+   if (xQueue_wave_task == NULL) ESP_LOGE(TAG, "Unable to create wave command queue");
+   
+   float delay = deviceDistanceSpeed(wave.x, wave.y, wave.z ,wave.speed);
+   vTaskDelay(pdMS_TO_TICKS(delay));
+
+    while(1) {
+        command_move(0, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]),device_stepper.min, device_stepper.max);
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
+
+void wave_command(int x, int y, int z, int speed){
+    wave_t wave_action;
+    wave_action.x = x;
+    wave_action.y = y;
+    wave_action.z = z;
+    wave_action.speed = speed;
+    xQueueSendToBack(xQueue_wave_task, (void *) &wave_action, 0);            
+
+}
 //MESSAGE QUE
 void command_handler(char * queue_value, int type){
 
