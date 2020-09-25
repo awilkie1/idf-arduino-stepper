@@ -879,16 +879,21 @@ void wave_task(void *args) {
    xQueue_wave_task = xQueueCreate(10, sizeof(wave_t));
    if (xQueue_wave_task == NULL) ESP_LOGE(TAG, "Unable to create wave command queue");
    
-   float delay = deviceDistanceSpeed(wave.x, wave.y, wave.z ,wave.speed);
-   vTaskDelay(pdMS_TO_TICKS(delay));
-
     while(1) {
-        command_move(wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
-        vTaskDelay(pdMS_TO_TICKS(10));
+         if (xQueueReceive(xQueue_wave_task, &wave, portMAX_DELAY)) {
+            ESP_LOGI(TAG, "X : %d Y : %d Z : %d SPEED : %d", wave.x, wave.y, wave.z ,wave.speed);
+            float delay = deviceDistanceSpeed(wave.x, wave.y, wave.z ,wave.speed);
+            ESP_LOGI(TAG, "DELAY : %f", delay);
+            vTaskDelay(pdMS_TO_TICKS(delay));
+            ESP_LOGI(TAG, "TYPE : %d MOVE : %ld SPEED : %d ACCEL : %d MIN : %d MAX : %d", wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
+            command_move(wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
+            vTaskDelay(pdMS_TO_TICKS(10));
+         }
     }
+    vTaskDelete(NULL); // clean up after ourselves
 }
 
-void wave_command(int x, int y, int z, int speed, int type, int move, int stepper_speed, int accel, int min, int max){
+void wave_command(int x, int y, int z, int speed, int type, long move, int stepper_speed, int accel, int min, int max){
     wave_t wave_action;
     wave_action.x = x;
     wave_action.y = y;
@@ -938,7 +943,7 @@ void command_handler(char * queue_value, int type){
             ESP_LOGI(TAG,"STEPPER NUMBER MOVE %d : %d", selectedCommand, atoi(command_line[selectedCommand]));
         }
         if (strcmp(command_line[0], "stepperWave") == 0){//Move to location
-            wave_command(atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), atoi(command_line[4]), atoi(command_line[5]), atoi(command_line[6]), atoi(command_line[7]), atoi(command_line[8]), atoi(command_line[9]), atoi(command_line[10]));       
+            wave_command(atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), atoi(command_line[4]), atoi(command_line[5]), atoi(command_line[6]), atoi(command_line[7]), atoi(command_line[8]),device_stepper.min, device_stepper.max);       
         }
         //SETTING PARAMTERS UDP
         if (strcmp(command_line[0], "setMin") == 0){

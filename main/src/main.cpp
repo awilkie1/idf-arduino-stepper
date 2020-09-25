@@ -96,7 +96,7 @@ extern "C" void app_main() {
 
    //xTaskCreatePinnedToCore(&sensor_task, "sensor_task", 1024, NULL, 3, &sensor_task_handle, 0);
 
-   xTaskCreatePinnedToCore(&wave_task, "wave_task", 1024, NULL, 3, &wave_task_handle, 0);
+   xTaskCreatePinnedToCore(&wave_task, "wave_tasks", 1024, NULL, 3, &wave_task_handle, 0);
 
    String inString = ""; // String to hold input
    int inNum = 0;
