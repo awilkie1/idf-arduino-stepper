@@ -93,11 +93,13 @@ extern "C" void app_main() {
    ESP_LOGI(TAG,"Boot Position %d",device_stepper.current);
    init_strand(device_stepper.current); // Start the stepper motor system
 
-   xTaskCreatePinnedToCore(&stepper_task, "stepper_task", 2*1024, NULL, 2, &stepper_task_handle, 0);
+   xTaskCreatePinnedToCore(&stepper_task, "stepper_task", 2*1024, NULL, 4, &stepper_task_handle, 0);
 
-   //xTaskCreatePinnedToCore(&sensor_task, "sensor_task", 1024, NULL, 3, &sensor_task_handle, 0);
+   esp_task_wdt_delete(NULL); // remove from watchdog
 
-   xTaskCreatePinnedToCore(&wave_task, "wave_tasks", 1024, NULL, 3, &wave_task_handle, 0);
+   // xTaskCreatePinnedToCore(&sensor_task, "sensor_task", 1024, NULL, 3, &sensor_task_handle, 0);
+
+   // xTaskCreatePinnedToCore(&wave_task, "wave_tasks", 1024, NULL, 3, &wave_task_handle, 0);
 
    String inString = ""; // String to hold input
    int inNum = 0;
@@ -126,6 +128,13 @@ extern "C" void app_main() {
    xQueueAddToSet(xQueue_multicast_task, queue_set);
    xQueueAddToSet(xQueue_broadcast_task, queue_set);
    xQueueAddToSet(xQueue_tcp_task, queue_set);
+
+   for (int i=0; i<10; i++){
+      command_move(0, 10000, 800, 3000, 0, 10000);
+      command_move(0, -10000, 800, 3000, 0, 10000);
+      vTaskDelay(pdMS_TO_TICKS(1000));
+   }
+
 
    // Block the task until we receive a value from any of the queues
    while ((queue_set_member = xQueueSelectFromSet(queue_set, portMAX_DELAY))) {

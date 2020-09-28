@@ -10,6 +10,8 @@
 // ----VARIABLES----
 extern QueueHandle_t xQueue_stepper_command; // This external reference has to be defined again in Strand.c
 
+extern TaskHandle_t stepper_task_handle;
+
 
 // ----FUNCTIONS----
 void init_strand(int bootPosition);

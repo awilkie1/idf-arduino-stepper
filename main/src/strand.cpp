@@ -26,7 +26,7 @@ const int uart_buffer_size = (1024 * 2);
 #define DRIVER_ADDRESS  0b00       // TMC2209 Driver address according to MS1 and MS2
 #define MICROSTEPPING         8 // MICROSTEPPING 
 //homiing buttion stuff
-#define HOME_PIN         34 // HOME
+#define HOME_PIN         32 // HOME
 
 //TMC2208Stepper driver(&SerialPort, R_SENSE); 
 TMC2209Stepper driver(&SerialPort, R_SENSE , DRIVER_ADDRESS);
@@ -51,8 +51,12 @@ struct Button {
 Button button1 = {HOME_PIN, 0, false};
 
 void IRAM_ATTR isr() {
-  button1.numberKeyPresses += 1;
-  button1.pressed = true;
+    if (stepper_task_handle != NULL) {
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        button1.numberKeyPresses += 1;
+        button1.pressed = true;
+        xTaskNotifyFromISR(stepper_task_handle, 2, eSetValueWithoutOverwrite, &xHigherPriorityTaskWoken);
+    }
 }
 
 long currentPosition;
@@ -73,14 +77,14 @@ void command_move(int type, int move, int speed, int accel, int min, int max){
 }
 
 void sensor_task(void *args) {
-    adc1_config_width(ADC_WIDTH_BIT_12);
-    adc1_config_channel_atten(ADC1_CHANNEL_0,ADC_ATTEN_DB_0);
+    // adc1_config_width(ADC_WIDTH_BIT_12);
+    // adc1_config_channel_atten(ADC1_CHANNEL_0,ADC_ATTEN_DB_0);
     int val = 0;
     
     while(1) {
-        val = adc1_get_raw(ADC1_CHANNEL_0);
-        Serial.println(val);
-        vTaskDelay(pdMS_TO_TICKS(10));
+        val = digitalRead(button1.PIN);
+        vTaskDelay(pdMS_TO_TICKS(100));
+        ESP_LOGI(TAG, "Sensor Val: %i", val);
     }
 }
 
@@ -151,11 +155,12 @@ void init_strand(int bootPosition) {
     driver.TPWMTHRS(thr);
 
 
-   pinMode(button1.PIN, INPUT);
-   attachInterrupt(button1.PIN, isr, FALLING);
+   pinMode(button1.PIN, INPUT_PULLUP);
+   attachInterrupt(digitalPinToInterrupt(button1.PIN), isr, FALLING);
 }
 
 void stepper_task(void *args) {
+    // esp_task_wdt_feed();
     ESP_LOGI(TAG, "Init Stepper Queue");
     // Setup the data structure to store and retrieve stepper commands
     xQueue_stepper_command = xQueueCreate(10, sizeof(stepper_command_t));
@@ -166,6 +171,7 @@ void stepper_task(void *args) {
 
     ESP_LOGI(TAG, "Start Stepper Task");
     while(1) {
+        vTaskDelay(10);
 
         if (xQueueReceive(xQueue_stepper_command, &stepper_commands, portMAX_DELAY)) {
             //if type 0 DONT record the position (relative)
@@ -205,20 +211,23 @@ void stepper_task(void *args) {
             stepper.move(stepper_move);
             // Run the stepper loop until we get to our destination
             while(stepper.distanceToGo() != 0) {
-                if (button1.pressed){ 
-                    if (home==true) {//Alowing to be wound out
-                        stepper.setCurrentPosition(0);
-                        stepper.runToNewPosition(600);
-                        home=false;
-                        setPramamter(1, 0);
-                        currentPosition = 0;
-                        saveParamters();
-                    } else {//Home Senced 
-                        Serial.printf("SENCED");
-                        home = true; 
-                        button1.pressed = false; //Needed to flip off
-                    }
+                if (ulTaskNotifyTake(pdTRUE, 0) > 1) {
+                    ESP_LOGW(TAG, "Notify receive");
                 }
+                // if (ulTaskNotifyTake(pdTRUE, 0) > 1){ 
+                //     if (home==true) {//Alowing to be wound out
+                //         stepper.setCurrentPosition(0);
+                //         stepper.runToNewPosition(600);
+                //         home=false;
+                //         setPramamter(1, 0);
+                //         currentPosition = 0;
+                //         saveParamters();
+                //     } else {//Home Senced 
+                //         Serial.printf("SENCED");
+                //         home = true; 
+                //         button1.pressed = false; //Needed to flip off
+                //     }
+                // }
                 stepper.run();
                 // vTaskDelay(1);
             }
