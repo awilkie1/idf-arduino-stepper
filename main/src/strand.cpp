@@ -24,7 +24,7 @@ const int uart_buffer_size = (1024 * 2);
 // #define STEP_PIN         14 // Step  (Oliver)
 #define R_SENSE 0.11f
 #define DRIVER_ADDRESS  0b00       // TMC2209 Driver address according to MS1 and MS2
-#define MICROSTEPPING         8 // MICROSTEPPING 
+#define MICROSTEPPING         8// MICROSTEPPING 8
 //homiing buttion stuff
 #define HOME_PIN         34 // HOME
 
@@ -83,42 +83,52 @@ void sensor_task(void *args) {
 
 void init_strand(int bootPosition) {
     // Start UART and TMC2208
-   pinMode(EN_PIN, OUTPUT);
-   pinMode(STEP_PIN, OUTPUT);
-   pinMode(DIR_PIN, OUTPUT);
-   digitalWrite(EN_PIN, LOW);      // Enable driver in hardware
-   
-   // Driver Setup
-   SerialPort.begin(115200);
-   driver.begin();
-   driver.pdn_disable(true);               // Use PDN/UART pin for communication
-   driver.I_scale_analog(false);           // Use internal voltage reference
-   driver.mstep_reg_select(1);             // necessary for TMC2208 to set microstep register with UART
-   driver.toff(3);                         // Enables driver in software
-   driver.rms_current(1200);               // Set motor RMS current
-   driver.microsteps(MICROSTEPPING);       // Set microsteps to 1/16th
-   driver.en_spreadCycle(false);           // Toggle spr
-   driver.VACTUAL(0);                      // make sure velocity is set to 0
-   driver.pwm_autoscale(true);             // Needed for stealthChop
+    pinMode(EN_PIN, OUTPUT);
+    pinMode(STEP_PIN, OUTPUT);
+    pinMode(DIR_PIN, OUTPUT);
+    digitalWrite(EN_PIN, LOW);      // Enable driver in hardware
 
-   // Stepper Library Setup
-   stepper.setMaxSpeed(1400*MICROSTEPPING); // 100mm/s @ 80 steps/mm
-   stepper.setAcceleration(1000*MICROSTEPPING); // 2000mm/s^2
-   stepper.setEnablePin(EN_PIN);
-   stepper.setPinsInverted(false, false, true);
-   stepper.enableOutputs();
+    // Driver Setup
+    SerialPort.begin(115200);
+    driver.begin();
+    driver.pdn_disable(true);               // Use PDN/UART pin for communication
+    driver.I_scale_analog(false);           // Use internal voltage reference
+    driver.mstep_reg_select(1);             // necessary for TMC2208 to set microstep register with UART
 
-   currentPosition = bootPosition;
-   
+    driver.rms_current(1200);               // Set motor RMS current
+    driver.microsteps(MICROSTEPPING);       // Set microsteps to 1/16th
+    driver.en_spreadCycle(false);           // Toggle spr
+    driver.VACTUAL(0);                      // make sure velocity is set to 0
+
+    // Stealthchop Config
+    driver.pwm_autoscale(true);             // Needed for stealthChop
+    driver.pwm_autograd(true);
+
+    // Spreadcycle Config
+    driver.toff(4);                         // Enables driver in software
+    driver.tbl(1);
+    driver.hstrt(0);
+    driver.hend(0);
+    // driver.pwm_lim(10);
+
+    // Stepper Library Setup
+    stepper.setMaxSpeed(1400*MICROSTEPPING); // 100mm/s @ 80 steps/mm
+    stepper.setAcceleration(1000*MICROSTEPPING); // 2000mm/s^2
+    stepper.setEnablePin(EN_PIN);
+    stepper.setPinsInverted(false, false, true);
+    stepper.enableOutputs();
+
+    currentPosition = bootPosition;
+
     //Driver Tests 
-   if (driver.drv_err()) {
-       ESP_LOGW(TAG, "Driver ERROR");
-   }
-  
-   ESP_LOGI(TAG,"\nTesting connection...");
-   uint8_t result = driver.test_connection();
+    if (driver.drv_err()) {
+        ESP_LOGW(TAG, "Driver ERROR");
+    }
 
-   if (result) {
+    ESP_LOGI(TAG,"\nTesting connection...");
+    uint8_t result = driver.test_connection();
+
+    if (result) {
     ESP_LOGI(TAG,"failed!");
     ESP_LOGI(TAG,"Likely cause: ");
 
@@ -133,22 +143,22 @@ void init_strand(int bootPosition) {
     delay(100);
     server_ping("ERROR");//Sends the boot up message to the server
 
-   }
+    }
 
     /* ----THRESHOLD----
-     * Changing the 'thr' variable raises or lowers the velocity at which the stepper motor switches between StealthChop and SpreadCycle
-     * - Low values results in SpreadCycle being activated at lower velocities
-     * - High values results in SpreadCycle being activated at higher velocities
-     * - If SpreadCycle is active while too slow, there will be noise
-     * - If StealthChop is active while too fast, there will also be noise
-     * For the 15:1 stepper, values between 70-120 is optimal 
+        * Changing the 'thr' variable raises or lowers the velocity at which the stepper motor switches between StealthChop and SpreadCycle
+        * - Low values results in SpreadCycle being activated at lower velocities
+        * - High values results in SpreadCycle being activated at higher velocities
+        * - If SpreadCycle is active while too slow, there will be noise
+        * - If StealthChop is active while too fast, there will also be noise
+        * For the 15:1 stepper, values between 70-120 is optimal 
     */
-    uint32_t thr = 120; // 70-120 is optimal
+    uint32_t thr = 140; // 70-120 is optimal
     driver.TPWMTHRS(thr);
 
 
-   pinMode(button1.PIN, INPUT);
-   attachInterrupt(button1.PIN, isr, FALLING);
+    pinMode(button1.PIN, INPUT);
+    attachInterrupt(button1.PIN, isr, FALLING);
 }
 
 void stepper_task(void *args) {
@@ -159,11 +169,17 @@ void stepper_task(void *args) {
 
     long stepper_move = 0; // storage for incoming stepper command
     int stepper_target = 0;
+    // uint32_t thr = 0; // 70-120 is optimal
 
     ESP_LOGI(TAG, "Start Stepper Task");
     while(1) {
+        vTaskDelay(10);
 
         if (xQueueReceive(xQueue_stepper_command, &stepper_commands, portMAX_DELAY)) {
+
+            // driver.TPWMTHRS(thr);
+            // thr+=20;
+            // ESP_LOGW(TAG, "Threshold: %i", thr);
             //if type 0 DONT record the position (relative)
             //ESP_LOGI(TAG, "Stepper Type %d", stepper_commands.type);
 
@@ -216,6 +232,7 @@ void stepper_task(void *args) {
                 stepper.run();
                 // vTaskDelay(1);
             }
+            vTaskDelay(0);
         }
         
     }

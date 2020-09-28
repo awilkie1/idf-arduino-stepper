@@ -31,7 +31,7 @@
 
 // WIFI Network Connection
 // #define _WIFI_SSID "_bloom"
-#define _WIFI_SSID "_bloom" // Ollie's test env
+#define _WIFI_SSID "_bloom_mesh" // Ollie's test env
 #define _WIFI_PASS "sqU1d0ak"
 
 #define SERVER_IP_ADDRESS "10.0.2.10"

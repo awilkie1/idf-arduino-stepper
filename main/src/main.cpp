@@ -90,9 +90,9 @@ extern "C" void app_main() {
 
    init_strand(device_stepper.min); // Start the stepper motor system
 
-   xTaskCreatePinnedToCore(&stepper_task, "stepper_task", 2*1024, NULL, 2, &stepper_task_handle, 0);
+   xTaskCreatePinnedToCore(&stepper_task, "stepper_task", 2*1024, NULL, 3, &stepper_task_handle, 0);
 
-   xTaskCreatePinnedToCore(&sensor_task, "sensor_task", 1024, NULL, 3, &sensor_task_handle, 0);
+   // xTaskCreatePinnedToCore(&sensor_task, "sensor_task", 1024, NULL, 3, &sensor_task_handle, 0);
 
    String inString = ""; // String to hold input
    int inNum = 0;
@@ -114,6 +114,11 @@ extern "C" void app_main() {
    //    }
    //    vTaskDelay(pdMS_TO_TICKS(100));
    // }
+   for (int i=0; i<10; i++){
+      command_move(0, 5000, 1600, 3000, 0, 10000);
+      command_move(0, -5000, 1600, 3000, 0, 10000);
+      // vTaskDelay(pdMS_TO_TICKS(1000));
+   }
 
    queue_set = xQueueCreateSet(3);                    // Create QueueSet
    vTaskDelay(10);
