@@ -225,7 +225,6 @@ void saveParamters(){
 
     ESP_LOGI(TAG, "SET PARAMTER %d : %d : %d : %d : %d", step.current, step.min, step.max, step.target,step.number);
 }
-
 //WIFI
 esp_err_t event_handler(void *ctx, system_event_t *event)
 
@@ -798,10 +797,12 @@ void tcp_task(void *pvParameters)
 }
 
 void command_ota(void){
+    saveParamters();
     //xTaskCreate(&ota_task, "ota_task", 16384, NULL, 3, NULL);
     xTaskCreate(&simple_ota_example_task, "ota_example_task", 8192, NULL, 5, NULL);
 }
 static esp_err_t command_reset(){
+    saveParamters();
     esp_restart();
     return ESP_OK;
 }
@@ -885,8 +886,11 @@ void wave_task(void *args) {
             float delay = deviceDistanceSpeed(wave.x, wave.y, wave.z ,wave.speed);
             ESP_LOGI(TAG, "DELAY : %f", delay);
             vTaskDelay(pdMS_TO_TICKS(delay));
+            //ESP_LOGI(TAG, "TYPE : %d MOVE : %ld SPEED : %d ACCEL : %d MIN : %d MAX : %d", wave.stepper_type, wave.stepper_move, wave.stepper_speed, wave.stepper_accel,wave.stepper_min, wave.stepper_max);
             ESP_LOGI(TAG, "TYPE : %d MOVE : %ld SPEED : %d ACCEL : %d MIN : %d MAX : %d", wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
-            command_move(wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
+            //command_move(wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
+            //command_move(wave.stepper_type, wave.stepper_move, wave.stepper_speed, wave.stepper_accel,wave.stepper_min, wave.stepper_max);
+
             vTaskDelay(pdMS_TO_TICKS(10));
          }
     }
@@ -899,6 +903,13 @@ void wave_command(int x, int y, int z, int speed, int type, long move, int stepp
     wave_action.y = y;
     wave_action.z = z;
     wave_action.speed = speed;
+
+    // wave_action.stepper_type = type;
+    // wave_action.stepper_move = move;
+    // wave_action.stepper_speed = speed;
+    // wave_action.stepper_accel = accel;
+    // wave_action.stepper_min = min;
+    // wave_action.stepper_max = max;
 
     stepper_command_t stepper_action;
     stepper_action.move = move;
@@ -931,12 +942,16 @@ void command_handler(char * queue_value, int type){
             command_reset();
         }
         //MOVEMENT TYPES/BEHAVIOURS
+        if (strcmp(command_line[0], "home") == 0){//Relative Move
+            command_move(0, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]),device_stepper.min, device_stepper.max);
+        }
         if (strcmp(command_line[0], "stepperMove") == 0){//Relative Move
             command_move(0, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]),device_stepper.min, device_stepper.max);
         }
         if (strcmp(command_line[0], "stepperTranslate") == 0){//Move to location
             command_move(1, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), device_stepper.min, device_stepper.max);
         }
+        
         if (strcmp(command_line[0], "stepperNumTranslate") == 0){
             int selectedCommand = device_stepper.number + 2;
             command_move(1, atoi(command_line[selectedCommand]), atoi(command_line[1]), atoi(command_line[2]), device_stepper.min, device_stepper.max);
