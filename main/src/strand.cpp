@@ -57,7 +57,7 @@ void IRAM_ATTR isr() {
 
 long currentPosition;
 //float factor = 11.8; // wheel ratio steps per mm
-float factor = 22; // wheel ratio steps per mm
+float factor = 22.6; // wheel ratio steps per mm
 
 void command_move(int type, int move, int speed, int accel, int min, int max){
     //xQueueSendToBack(xQueue_stepper_command, (void *) &move, 0);
@@ -112,7 +112,8 @@ void init_strand(int bootPosition) {
    stepper.enableOutputs();
 
    currentPosition = bootPosition;
-   
+    ESP_LOGI(TAG,"current Position %ld",currentPosition);
+
     //Driver Tests 
    if (driver.drv_err()) {
        ESP_LOGW(TAG, "Driver ERROR");
@@ -209,6 +210,9 @@ void stepper_task(void *args) {
                         stepper.setCurrentPosition(0);
                         stepper.runToNewPosition(600);
                         home=false;
+                        setPramamter(1, 0);
+                        currentPosition = 0;
+                        saveParamters();
                     } else {//Home Senced 
                         Serial.printf("SENCED");
                         home = true; 
@@ -222,6 +226,7 @@ void stepper_task(void *args) {
             if (stepper_commands.type == 1){
                 setPramamter(1, currentPosition);
             }
+            
         }
         
     }
