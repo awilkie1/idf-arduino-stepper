@@ -173,7 +173,6 @@ void stepper_task(void *args) {
             stepper.setMaxSpeed(stepper_commands.speed); // 100mm/s @ 80 steps/mm
             stepper.setAcceleration(stepper_commands.accel); // 100mm/s @ 80 steps/mm
 
-
             if (stepper_commands.type == 1){
 
                 if (stepper_commands.move <= stepper_commands.min) {
@@ -205,7 +204,7 @@ void stepper_task(void *args) {
             stepper.move(stepper_move);
             // Run the stepper loop until we get to our destination
             while(stepper.distanceToGo() != 0) {
-                 if (button1.pressed){ 
+                if (button1.pressed){ 
                     if (home==true) {//Alowing to be wound out
                         stepper.setCurrentPosition(0);
                         stepper.runToNewPosition(600);
@@ -218,6 +217,10 @@ void stepper_task(void *args) {
                 }
                 stepper.run();
                 // vTaskDelay(1);
+            }
+            
+            if (stepper_commands.type == 1){
+                setPramamter(1, currentPosition);
             }
         }
         

@@ -90,7 +90,7 @@ extern "C" void app_main() {
    
    server_ping("boot");//Sends the boot up message to the server
 
-   init_strand(device_stepper.min); // Start the stepper motor system
+   init_strand(device_stepper.current); // Start the stepper motor system
 
    xTaskCreatePinnedToCore(&stepper_task, "stepper_task", 2*1024, NULL, 2, &stepper_task_handle, 0);
 
