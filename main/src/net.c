@@ -885,8 +885,11 @@ void wave_task(void *args) {
             float delay = deviceDistanceSpeed(wave.x, wave.y, wave.z ,wave.speed);
             ESP_LOGI(TAG, "DELAY : %f", delay);
             vTaskDelay(pdMS_TO_TICKS(delay));
+            //ESP_LOGI(TAG, "TYPE : %d MOVE : %ld SPEED : %d ACCEL : %d MIN : %d MAX : %d", wave.stepper_type, wave.stepper_move, wave.stepper_speed, wave.stepper_accel,wave.stepper_min, wave.stepper_max);
             ESP_LOGI(TAG, "TYPE : %d MOVE : %ld SPEED : %d ACCEL : %d MIN : %d MAX : %d", wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
-            command_move(wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
+            //command_move(wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
+            //command_move(wave.stepper_type, wave.stepper_move, wave.stepper_speed, wave.stepper_accel,wave.stepper_min, wave.stepper_max);
+
             vTaskDelay(pdMS_TO_TICKS(10));
          }
     }
@@ -899,6 +902,13 @@ void wave_command(int x, int y, int z, int speed, int type, long move, int stepp
     wave_action.y = y;
     wave_action.z = z;
     wave_action.speed = speed;
+
+    // wave_action.stepper_type = type;
+    // wave_action.stepper_move = move;
+    // wave_action.stepper_speed = speed;
+    // wave_action.stepper_accel = accel;
+    // wave_action.stepper_min = min;
+    // wave_action.stepper_max = max;
 
     stepper_command_t stepper_action;
     stepper_action.move = move;

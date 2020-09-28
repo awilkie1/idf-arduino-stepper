@@ -87,7 +87,14 @@ typedef struct wave {
     int32_t y;
     int32_t z;
     int32_t speed;
+
     stepper_command_t wave_stepper;
+    // int stepper_min;
+    // int stepper_max;
+    // int stepper_speed;
+    // int stepper_accel;
+    // long stepper_move;
+    // int stepper_type;
 } wave_t;
 
 #ifdef __cplusplus
