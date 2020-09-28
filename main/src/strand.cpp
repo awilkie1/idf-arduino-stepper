@@ -57,7 +57,7 @@ void IRAM_ATTR isr() {
 
 long currentPosition;
 //float factor = 11.8; // wheel ratio steps per mm
-float factor = 22; // wheel ratio steps per mm
+float factor = 22.6; // wheel ratio steps per mm
 
 void command_move(int type, int move, int speed, int accel, int min, int max){
     //xQueueSendToBack(xQueue_stepper_command, (void *) &move, 0);
@@ -98,30 +98,8 @@ void init_strand(int bootPosition) {
     driver.I_scale_analog(false);           // Use internal voltage reference
     driver.mstep_reg_select(1);             // necessary for TMC2208 to set microstep register with UART
 
-    driver.rms_current(1200);               // Set motor RMS current
-    driver.microsteps(MICROSTEPPING);       // Set microsteps to 1/16th
-    driver.en_spreadCycle(false);           // Toggle spr
-    driver.VACTUAL(0);                      // make sure velocity is set to 0
-
-    // Stealthchop Config
-    driver.pwm_autoscale(true);             // Needed for stealthChop
-    driver.pwm_autograd(true);
-
-    // Spreadcycle Config
-    driver.toff(4);                         // Enables driver in software
-    driver.tbl(1);
-    driver.hstrt(0);
-    driver.hend(0);
-    // driver.pwm_lim(10);
-
-    // Stepper Library Setup
-    stepper.setMaxSpeed(1400*MICROSTEPPING); // 100mm/s @ 80 steps/mm
-    stepper.setAcceleration(1000*MICROSTEPPING); // 2000mm/s^2
-    stepper.setEnablePin(EN_PIN);
-    stepper.setPinsInverted(false, false, true);
-    stepper.enableOutputs();
-
-    currentPosition = bootPosition;
+   currentPosition = bootPosition;
+    ESP_LOGI(TAG,"current Position %ld",currentPosition);
 
     //Driver Tests 
     if (driver.drv_err()) {
@@ -225,6 +203,9 @@ void stepper_task(void *args) {
                         stepper.setCurrentPosition(0);
                         stepper.runToNewPosition(600);
                         home=false;
+                        setPramamter(1, 0);
+                        currentPosition = 0;
+                        saveParamters();
                     } else {//Home Senced 
                         Serial.printf("SENCED");
                         home = true; 
@@ -238,6 +219,7 @@ void stepper_task(void *args) {
             if (stepper_commands.type == 1){
                 setPramamter(1, currentPosition);
             }
+            
         }
         
     }

@@ -225,7 +225,6 @@ void saveParamters(){
 
     ESP_LOGI(TAG, "SET PARAMTER %d : %d : %d : %d : %d", step.current, step.min, step.max, step.target,step.number);
 }
-
 //WIFI
 esp_err_t event_handler(void *ctx, system_event_t *event)
 
@@ -798,10 +797,12 @@ void tcp_task(void *pvParameters)
 }
 
 void command_ota(void){
+    saveParamters();
     //xTaskCreate(&ota_task, "ota_task", 16384, NULL, 3, NULL);
     xTaskCreate(&simple_ota_example_task, "ota_example_task", 8192, NULL, 5, NULL);
 }
 static esp_err_t command_reset(){
+    saveParamters();
     esp_restart();
     return ESP_OK;
 }
@@ -941,12 +942,16 @@ void command_handler(char * queue_value, int type){
             command_reset();
         }
         //MOVEMENT TYPES/BEHAVIOURS
+        if (strcmp(command_line[0], "home") == 0){//Relative Move
+            command_move(0, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]),device_stepper.min, device_stepper.max);
+        }
         if (strcmp(command_line[0], "stepperMove") == 0){//Relative Move
             command_move(0, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]),device_stepper.min, device_stepper.max);
         }
         if (strcmp(command_line[0], "stepperTranslate") == 0){//Move to location
             command_move(1, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), device_stepper.min, device_stepper.max);
         }
+        
         if (strcmp(command_line[0], "stepperNumTranslate") == 0){
             int selectedCommand = device_stepper.number + 2;
             command_move(1, atoi(command_line[selectedCommand]), atoi(command_line[1]), atoi(command_line[2]), device_stepper.min, device_stepper.max);
