@@ -55,12 +55,13 @@ QueueHandle_t xQueue_tcp_task;
 QueueHandle_t xQueue_tcp_respond;
 
 QueueHandle_t xQueue_wave_task;
-wave_t wave;
+wave_t wave = {0};
 
 tcp_task_action_t tcp_queue_value;
 
 location_t device_location;
 stepper_t device_stepper;
+
 
 //NVS
 
@@ -886,18 +887,15 @@ void wave_task(void *args) {
             float delay = deviceDistanceSpeed(wave.x, wave.y, wave.z ,wave.speed);
             ESP_LOGI(TAG, "DELAY : %f", delay);
             vTaskDelay(pdMS_TO_TICKS(delay));
-            //ESP_LOGI(TAG, "TYPE : %d MOVE : %ld SPEED : %d ACCEL : %d MIN : %d MAX : %d", wave.stepper_type, wave.stepper_move, wave.stepper_speed, wave.stepper_accel,wave.stepper_min, wave.stepper_max);
-            ESP_LOGI(TAG, "TYPE : %d MOVE : %ld SPEED : %d ACCEL : %d MIN : %d MAX : %d", wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
-            //command_move(wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
-            //command_move(wave.stepper_type, wave.stepper_move, wave.stepper_speed, wave.stepper_accel,wave.stepper_min, wave.stepper_max);
-
+            ESP_LOGI(TAG, "TYPE : %d MOVE : %d SPEED : %d ACCEL : %d MIN : %d MAX : %d", wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
+            command_move(wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
             vTaskDelay(pdMS_TO_TICKS(10));
          }
     }
     vTaskDelete(NULL); // clean up after ourselves
 }
 
-void wave_command(int x, int y, int z, int speed, int type, long move, int stepper_speed, int accel, int min, int max){
+void wave_command(int x, int y, int z, int speed, int type, int move, int stepper_speed, int accel, int min, int max){
     wave_t wave_action;
     wave_action.x = x;
     wave_action.y = y;

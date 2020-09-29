@@ -18,15 +18,18 @@ const int uart_buffer_size = (1024 * 2);
 #define RXD2             16  //UART
 #define TXD2             17  //UART
 #define EN_PIN           5   // Enable
-#define DIR_PIN          14  // Direction
-#define STEP_PIN         12  // Step
+#define DIR_PIN          19  // Direction
+#define STEP_PIN         18  // Step
+// #define DIR_PIN          14  // Direction
+// #define STEP_PIN         12  // Step
 // #define DIR_PIN          19 // Direction (Oliver)
 // #define STEP_PIN         14 // Step  (Oliver)
 #define R_SENSE 0.11f
 #define DRIVER_ADDRESS  0b00       // TMC2209 Driver address according to MS1 and MS2
 #define MICROSTEPPING         8// MICROSTEPPING 8
 //homiing buttion stuff
-#define HOME_PIN         32 // HOME
+// #define HOME_PIN         32 // HOME (Oliver)
+#define HOME_PIN         23 // HOME
 
 //TMC2208Stepper driver(&SerialPort, R_SENSE); 
 TMC2209Stepper driver(&SerialPort, R_SENSE , DRIVER_ADDRESS);
@@ -59,7 +62,7 @@ void IRAM_ATTR isr() {
     }
 }
 
-long currentPosition;
+int currentPosition;
 //float factor = 11.8; // wheel ratio steps per mm
 float factor = 22.6; // wheel ratio steps per mm
 
@@ -68,6 +71,7 @@ void command_move(int type, int move, int speed, int accel, int min, int max){
     stepper_command_t test_action;
     test_action.move = move;
     test_action.type = type;
+
     test_action.speed = speed;
     test_action.accel = accel;
     test_action.min = min;
@@ -103,7 +107,7 @@ void init_strand(int bootPosition) {
     driver.mstep_reg_select(1);             // necessary for TMC2208 to set microstep register with UART
 
    currentPosition = bootPosition;
-    ESP_LOGI(TAG,"current Position %ld",currentPosition);
+    ESP_LOGI(TAG,"current Position %d",currentPosition);
 
     //Driver Tests 
     if (driver.drv_err()) {
@@ -153,13 +157,12 @@ void stepper_task(void *args) {
     xQueue_stepper_command = xQueueCreate(10, sizeof(stepper_command_t));
     if (xQueue_stepper_command == NULL) ESP_LOGE(TAG, "Unable to create stepper command queue");
 
-    long stepper_move = 0; // storage for incoming stepper command
+    int stepper_move = 0; // storage for incoming stepper command
     int stepper_target = 0;
     // uint32_t thr = 0; // 70-120 is optimal
 
     ESP_LOGI(TAG, "Start Stepper Task");
     while(1) {
-        vTaskDelay(10);
 
         if (xQueueReceive(xQueue_stepper_command, &stepper_commands, portMAX_DELAY)) {
 
@@ -187,39 +190,39 @@ void stepper_task(void *args) {
                 }
                 stepper_move = (stepper_target - currentPosition) * factor;//works out based on mm
 
-                ESP_LOGI(TAG, "Stepper Move To : %ld Dif %ld : Current : %ld",stepper_commands.move, stepper_move, currentPosition);
+                ESP_LOGI(TAG, "Stepper Move To : %d Dif %d : Current : %d",stepper_commands.move, stepper_move, currentPosition);
 
                 currentPosition = stepper_target;
                  //save out and back to main = currentPosition;
             }
             if (stepper_commands.type == 0){
                 stepper_move = stepper_commands.move;
-                ESP_LOGI(TAG, "Stepper Move %ld : %ld", stepper_move, currentPosition);
+                ESP_LOGI(TAG, "Stepper Move %d : %d", stepper_move, currentPosition);
             }
             //if type 1 record the position 
             //Print
-            ESP_LOGI(TAG, "Stepper Move %ld", stepper_move);
+            ESP_LOGI(TAG, "Stepper Move %d", stepper_move);
             // Set distance to move from comand variable
             stepper.move(stepper_move);
             // Run the stepper loop until we get to our destination
             while(stepper.distanceToGo() != 0) {
-                if (ulTaskNotifyTake(pdTRUE, 0) > 1) {
-                    ESP_LOGW(TAG, "Notify receive");
-                }
-                // if (ulTaskNotifyTake(pdTRUE, 0) > 1){ 
-                //     if (home==true) {//Alowing to be wound out
-                //         stepper.setCurrentPosition(0);
-                //         stepper.runToNewPosition(600);
-                //         home=false;
-                //         setPramamter(1, 0);
-                //         currentPosition = 0;
-                //         saveParamters();
-                //     } else {//Home Senced 
-                //         Serial.printf("SENCED");
-                //         home = true; 
-                //         button1.pressed = false; //Needed to flip off
-                //     }
+                // if (ulTaskNotifyTake(pdTRUE, 0) > 1) {
+                //     ESP_LOGW(TAG, "Notify receive");
                 // }
+                if (ulTaskNotifyTake(pdTRUE, 0) > 1){ 
+                    if (home==true) {//Alowing to be wound out
+                        stepper.setCurrentPosition(0);
+                        stepper.runToNewPosition(600);
+                        home=false;
+                        setPramamter(1, 0);
+                        currentPosition = 0;
+                        saveParamters();
+                    } else {//Home Senced 
+                        Serial.printf("SENCED");
+                        home = true; 
+                        button1.pressed = false; //Needed to flip off
+                    }
+                }
                 stepper.run();
                 // vTaskDelay(1);
             }
