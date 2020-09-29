@@ -890,6 +890,10 @@ void wave_task(void *args) {
             ESP_LOGI(TAG, "TYPE : %d MOVE : %d SPEED : %d ACCEL : %d MIN : %d MAX : %d", wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
             command_move(wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
             vTaskDelay(pdMS_TO_TICKS(10));
+
+            // OVERWRITE
+            // This command sends a task notification with value '3' to the stepper task. Use that block of code to overwrite the stepper loop
+            xTaskNotify(stepper_task_handle, 3, eSetValueWithoutOverwrite);
          }
     }
     vTaskDelete(NULL); // clean up after ourselves

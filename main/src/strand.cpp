@@ -209,7 +209,7 @@ void stepper_task(void *args) {
                 // if (ulTaskNotifyTake(pdTRUE, 0) > 1) {
                 //     ESP_LOGW(TAG, "Notify receive");
                 // }
-                if (ulTaskNotifyTake(pdTRUE, 0) > 1){ 
+                if (ulTaskNotifyTake(pdTRUE, 0) == 2){ 
                     if (home==true) {//Alowing to be wound out
                         stepper.setCurrentPosition(0);
                         stepper.runToNewPosition(600);
@@ -222,6 +222,10 @@ void stepper_task(void *args) {
                         home = true; 
                         button1.pressed = false; //Needed to flip off
                     }
+                } else if (ulTaskNotifyTake(pdTRUE, 0) == 3) { 
+                    // Check if we have received a notificaiton value to overrid the stepper task
+                    
+
                 }
                 stepper.run();
                 // vTaskDelay(1);
