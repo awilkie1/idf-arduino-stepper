@@ -84,8 +84,8 @@ extern "C" void app_main() {
    xTaskCreate(&multicast_task, "multicast_task", 4096, NULL, 10, &multicast_task_handle);
    xTaskCreate(&broadcast_task, "broadcast_task", 4096, NULL, 10, &broadcast_task_handle);
    
-    char multicast_queue_value[COMMAND_ITEM_SIZE];
-    char broadcast_queue_value[COMMAND_ITEM_SIZE];
+   char multicast_queue_value[COMMAND_ITEM_SIZE];
+   char broadcast_queue_value[COMMAND_ITEM_SIZE];
     //char tcp_queue_value[COMMAND_ITEM_SIZE];
    
    server_ping("boot");//Sends the boot up message to the server
@@ -99,7 +99,7 @@ extern "C" void app_main() {
 
    // xTaskCreatePinnedToCore(&sensor_task, "sensor_task", 1024, NULL, 3, &sensor_task_handle, 0);
 
-   // xTaskCreatePinnedToCore(&wave_task, "wave_tasks", 1024, NULL, 3, &wave_task_handle, 0);
+   xTaskCreatePinnedToCore(&wave_task, "wave_tasks", 2*1024, NULL, 3, &wave_task_handle, 0);
 
    String inString = ""; // String to hold input
    int inNum = 0;
@@ -129,11 +129,11 @@ extern "C" void app_main() {
    xQueueAddToSet(xQueue_broadcast_task, queue_set);
    xQueueAddToSet(xQueue_tcp_task, queue_set);
 
-   for (int i=0; i<10; i++){
-      command_move(0, 10000, 800, 3000, 0, 10000);
-      command_move(0, -10000, 800, 3000, 0, 10000);
-      vTaskDelay(pdMS_TO_TICKS(1000));
-   }
+   // for (int i=0; i<10; i++){
+   //    command_move(0, 10000, 800, 3000, 0, 10000);
+   //    command_move(0, -10000, 800, 3000, 0, 10000);
+   //    vTaskDelay(pdMS_TO_TICKS(1000));
+   // }
 
 
    // Block the task until we receive a value from any of the queues

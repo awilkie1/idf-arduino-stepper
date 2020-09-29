@@ -85,7 +85,7 @@ void server_message(char* command,char* message);
 void command_ota(void);
 
 void wave_task(void *args);
-void wave_command(int x, int y, int z, int speed, int type, long move, int stepper_speed, int accel, int min, int max);
+void wave_command(int x, int y, int z, int speed, int type, int move, int stepper_speed, int accel, int min, int max);
 int deviceDistanceSpeed(int x, int y, int z, int s);
 // all of your header goes above this
 
