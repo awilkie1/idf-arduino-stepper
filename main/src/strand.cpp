@@ -14,6 +14,8 @@ QueueHandle_t xQueue_stepper_command; // Must redefine here
 stepper_command_t stepper_commands;
 
 HardwareSerial SerialPort(2);
+#define STALL_VALUE     100 // [0..255]
+
 const int uart_buffer_size = (1024 * 2);
 #define RXD2             16  //UART
 #define TXD2             17  //UART
@@ -36,7 +38,7 @@ TMC2209Stepper driver(&SerialPort, R_SENSE , DRIVER_ADDRESS);
 
 AccelStepper stepper = AccelStepper(stepper.DRIVER, STEP_PIN, DIR_PIN);
 constexpr uint32_t steps_per_mm = 80;
-
+uint32_t notify = 0;
 bool home = false;
 
 struct {
@@ -99,12 +101,21 @@ void init_strand(int bootPosition) {
     pinMode(DIR_PIN, OUTPUT);
     digitalWrite(EN_PIN, LOW);      // Enable driver in hardware
 
-    // Driver Setup
-    SerialPort.begin(115200);
-    driver.begin();
-    driver.pdn_disable(true);               // Use PDN/UART pin for communication
-    driver.I_scale_analog(false);           // Use internal voltage reference
-    driver.mstep_reg_select(1);             // necessary for TMC2208 to set microstep register with UART
+    //STALLGUARDING was miking some funny sounds 
+    // driver.TCOOLTHRS(0xFFFFF); // 20bit max
+    // //driver.THIGH(0);
+    // driver.semin(0);
+    // driver.semax(5);
+    // driver.sedn(0b01);
+    // //driver.sgt(STALL_VALUE);
+    // driver.SGTHRS(STALL_VALUE);
+
+   // Stepper Library Setup
+   stepper.setMaxSpeed(1400*MICROSTEPPING); // 100mm/s @ 80 steps/mm
+   stepper.setAcceleration(1000*MICROSTEPPING); // 2000mm/s^2
+   stepper.setEnablePin(EN_PIN);
+   stepper.setPinsInverted(false, false, true);
+   stepper.enableOutputs();
 
    currentPosition = bootPosition;
     ESP_LOGI(TAG,"current Position %d",currentPosition);
@@ -145,6 +156,7 @@ void init_strand(int bootPosition) {
     uint32_t thr = 140; // 70-120 is optimal
     driver.TPWMTHRS(thr);
 
+    // Set stepper interrupt
 
    pinMode(button1.PIN, INPUT_PULLUP);
    attachInterrupt(digitalPinToInterrupt(button1.PIN), isr, FALLING);
@@ -159,7 +171,7 @@ void stepper_task(void *args) {
 
     int stepper_move = 0; // storage for incoming stepper command
     int stepper_target = 0;
-    // uint32_t thr = 0; // 70-120 is optimal
+    
 
     ESP_LOGI(TAG, "Start Stepper Task");
     while(1) {
@@ -171,7 +183,7 @@ void stepper_task(void *args) {
             // ESP_LOGW(TAG, "Threshold: %i", thr);
             //if type 0 DONT record the position (relative)
             //ESP_LOGI(TAG, "Stepper Type %d", stepper_commands.type);
-
+            
             stepper.setMaxSpeed(stepper_commands.speed); // 100mm/s @ 80 steps/mm
             stepper.setAcceleration(stepper_commands.accel); // 100mm/s @ 80 steps/mm
 
@@ -209,7 +221,16 @@ void stepper_task(void *args) {
                 // if (ulTaskNotifyTake(pdTRUE, 0) > 1) {
                 //     ESP_LOGW(TAG, "Notify receive");
                 // }
-                if (ulTaskNotifyTake(pdTRUE, 0) == 2){ 
+                // Serial.print(driver.SG_RESULT(), DEC);
+                notify = ulTaskNotifyTake(pdTRUE, 0);
+
+                if (notify == 3) { 
+                    // Check if we have received a notificaiton value to overrid the stepper task
+                    //ESP_LOGI(TAG, "Stepper STOP");
+                    //ESP_LOGW(TAG, "Notify receive", ulTaskNotifyTake(pdTRUE, 0););
+                    stepper.stop(); 
+                    notify = 0;
+                } else if (notify == 2){ 
                     if (home==true) {//Alowing to be wound out
                         stepper.setCurrentPosition(0);
                         stepper.runToNewPosition(600);
@@ -222,16 +243,14 @@ void stepper_task(void *args) {
                         home = true; 
                         button1.pressed = false; //Needed to flip off
                     }
-                } else if (ulTaskNotifyTake(pdTRUE, 0) == 3) { 
-                    // Check if we have received a notificaiton value to overrid the stepper task
-                    
+                    notify = 0;
+                } 
 
-                }
                 stepper.run();
                 // vTaskDelay(1);
             }
-            
-            if (stepper_commands.type == 1){
+
+            if (stepper_commands.type == 1){//saving position once moved 
                 setPramamter(1, currentPosition);
             }
             

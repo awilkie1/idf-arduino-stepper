@@ -93,7 +93,7 @@ extern "C" void app_main() {
    ESP_LOGI(TAG,"Boot Position %d",device_stepper.current);
    init_strand(device_stepper.current); // Start the stepper motor system
 
-   xTaskCreatePinnedToCore(&stepper_task, "stepper_task", 2*1024, NULL, 4, &stepper_task_handle, 0);
+   xTaskCreatePinnedToCore(&stepper_task, "stepper_task", 4*1024, NULL, 4, &stepper_task_handle, 0);
 
    esp_task_wdt_delete(NULL); // remove from watchdog
 
