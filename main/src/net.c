@@ -893,7 +893,7 @@ void wave_task(void *args) {
 
             // OVERWRITE
             // This command sends a task notification with value '3' to the stepper task. Use that block of code to overwrite the stepper loop
-            xTaskNotify(stepper_task_handle, 3, eSetValueWithoutOverwrite);
+            //xTaskNotify(stepper_task_handle, 3, eSetValueWithOverwrite);
          }
     }
     vTaskDelete(NULL); // clean up after ourselves
@@ -942,6 +942,10 @@ void command_handler(char * queue_value, int type){
         }
         if (strcmp(command_line[0], "reset") == 0){
             command_reset();
+        }
+         if (strcmp(command_line[0], "stop") == 0){
+            //xTaskNotify(stepper_task_handle, 3, eSetValueWithoutOverwrite);
+            xTaskNotify(stepper_task_handle, 3, eSetValueWithOverwrite);
         }
         //MOVEMENT TYPES/BEHAVIOURS
         if (strcmp(command_line[0], "home") == 0){//Relative Move
