@@ -81,8 +81,8 @@ extern "C" void app_main() {
    device_stepper = command_init_stepper();
     
    xTaskCreate(&tcp_task, "tcp_task", 3072, NULL, 3, &tcp_task_handle);
-   xTaskCreate(&multicast_task, "multicast_task", 4096, NULL, 10, &multicast_task_handle);
-   xTaskCreate(&broadcast_task, "broadcast_task", 4096, NULL, 10, &broadcast_task_handle);
+   xTaskCreate(&multicast_task, "multicast_task", 4096, NULL, 3, &multicast_task_handle);
+   xTaskCreate(&broadcast_task, "broadcast_task", 4096, NULL, 3, &broadcast_task_handle);
    
    char multicast_queue_value[COMMAND_ITEM_SIZE];
    char broadcast_queue_value[COMMAND_ITEM_SIZE];
@@ -93,7 +93,7 @@ extern "C" void app_main() {
    ESP_LOGI(TAG,"Boot Position %d",device_stepper.current);
    init_strand(device_stepper.current); // Start the stepper motor system
 
-   xTaskCreatePinnedToCore(&stepper_task, "stepper_task", 4*1024, NULL, 4, &stepper_task_handle, 0);
+   xTaskCreatePinnedToCore(&stepper_task, "stepper_task", 4*1024, NULL, 4, &stepper_task_handle, 1);
 
    esp_task_wdt_delete(NULL); // remove from watchdog
 
@@ -129,11 +129,12 @@ extern "C" void app_main() {
    xQueueAddToSet(xQueue_broadcast_task, queue_set);
    xQueueAddToSet(xQueue_tcp_task, queue_set);
 
-   // for (int i=0; i<10; i++){
+   // for (int i=0; i<2; i++){
    //    command_move(0, 10000, 800, 3000, 0, 10000);
    //    command_move(0, -10000, 800, 3000, 0, 10000);
-   //    vTaskDelay(pdMS_TO_TICKS(1000));
+   //    // vTaskDelay(pdMS_TO_TICKS(1000));
    // }
+   // command_move(0, 40000, 3000, 3000, 0, 10000);
 
 
    // Block the task until we receive a value from any of the queues
