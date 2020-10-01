@@ -945,7 +945,9 @@ void command_handler(char * queue_value, int type){
         }
          if (strcmp(command_line[0], "stop") == 0){
             //xTaskNotify(stepper_task_handle, 3, eSetValueWithoutOverwrite);
-            xTaskNotify(stepper_task_handle, 3, eSetValueWithOverwrite);
+            // xTaskNotify(stepper_task_handle, 3, eSetValueWithOverwrite);
+            ESP_LOGW(TAG,"Stop command");
+            xTaskNotify(stepper_task_handle, STOP_BIT, eSetBits); 
         }
         //MOVEMENT TYPES/BEHAVIOURS
         if (strcmp(command_line[0], "home") == 0){//Relative Move

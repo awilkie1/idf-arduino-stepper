@@ -38,7 +38,6 @@ TMC2209Stepper driver(&SerialPort, R_SENSE , DRIVER_ADDRESS);
 
 AccelStepper stepper = AccelStepper(stepper.DRIVER, STEP_PIN, DIR_PIN);
 constexpr uint32_t steps_per_mm = 80;
-uint32_t notify = 0;
 bool home = false;
 
 struct {
@@ -60,7 +59,8 @@ void IRAM_ATTR isr() {
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
         button1.numberKeyPresses += 1;
         button1.pressed = true;
-        xTaskNotifyFromISR(stepper_task_handle, 2, eSetValueWithoutOverwrite, &xHigherPriorityTaskWoken);
+        // xTaskNotifyFromISR(stepper_task_handle, 2, eSetValueWithoutOverwrite, &xHigherPriorityTaskWoken);
+        xTaskNotifyFromISR(stepper_task_handle, HOME_BIT, eSetBits, &xHigherPriorityTaskWoken);
     }
 }
 
@@ -79,7 +79,13 @@ void command_move(int type, int move, int speed, int accel, int min, int max){
     test_action.min = min;
     test_action.max = max;
 
-    xQueueSendToBack(xQueue_stepper_command, (void *) &test_action, 0);            
+    xQueueSendToBack(xQueue_stepper_command, (void *) &test_action, 10);           
+    ESP_LOGW(TAG, "STEPPER MOVING");
+    // vTaskDelay(pdMS_TO_TICKS(500));
+    // BaseType_t ret =  xTaskNotify(stepper_task_handle, STOP_BIT, eSetBits); 
+    // ESP_LOGW(TAG, "Notify send: %i", (int) ret);
+    // BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    // xTaskNotifyFromISR(stepper_task_handle, STOP_BIT, eSetBits, &xHigherPriorityTaskWoken);
 }
 
 void sensor_task(void *args) {
@@ -172,6 +178,9 @@ void stepper_task(void *args) {
     int stepper_move = 0; // storage for incoming stepper command
     int stepper_target = 0;
     
+    BaseType_t xResult;
+    uint32_t notify = 0;
+    
 
     ESP_LOGI(TAG, "Start Stepper Task");
     while(1) {
@@ -222,29 +231,37 @@ void stepper_task(void *args) {
                 //     ESP_LOGW(TAG, "Notify receive");
                 // }
                 // Serial.print(driver.SG_RESULT(), DEC);
-                notify = ulTaskNotifyTake(pdTRUE, 0);
+                // notify = ulTaskNotifyTake(pdTRUE, 0);
+                xResult = xTaskNotifyWait( pdFALSE,    /* Don't clear bits on entry. */
+                           ULONG_MAX,        /* Clear all bits on exit. */
+                           &notify, /* Stores the notified value. */
+                           0 ); // Don't block
 
-                if (notify == 3) { 
-                    // Check if we have received a notificaiton value to overrid the stepper task
-                    //ESP_LOGI(TAG, "Stepper STOP");
-                    //ESP_LOGW(TAG, "Notify receive", ulTaskNotifyTake(pdTRUE, 0););
-                    stepper.stop(); 
-                    notify = 0;
-                } else if (notify == 2){ 
-                    if (home==true) {//Alowing to be wound out
-                        stepper.setCurrentPosition(0);
-                        stepper.runToNewPosition(600);
-                        home=false;
-                        setPramamter(1, 0);
-                        currentPosition = 0;
-                        saveParamters();
-                    } else {//Home Senced 
-                        Serial.printf("SENCED");
-                        home = true; 
-                        button1.pressed = false; //Needed to flip off
+                if (xResult  == pdPASS) {
+                    ESP_LOGW(TAG, "Notification Received: %i", notify);
+                    if (notify & HOME_BIT) {
+                        if (home==true) {//Alowing to be wound out
+                            stepper.setCurrentPosition(0);
+                            stepper.runToNewPosition(600);
+                            home=false;
+                            setPramamter(1, 0);
+                            currentPosition = 0;
+                            saveParamters();
+                        } else {//Home Senced 
+                            Serial.printf("SENCED");
+                            home = true; 
+                            button1.pressed = false; //Needed to flip off
+                        }
+                        notify = 0;
                     }
-                    notify = 0;
-                } 
+                    if (notify & STOP_BIT) {
+                        // Check if we have received a notificaiton value to overrid the stepper task
+                        //ESP_LOGI(TAG, "Stepper STOP");
+                        //ESP_LOGW(TAG, "Notify receive", ulTaskNotifyTake(pdTRUE, 0););
+                        stepper.stop(); 
+                        notify = 0;
+                    }
+                }
 
                 stepper.run();
                 // vTaskDelay(1);
