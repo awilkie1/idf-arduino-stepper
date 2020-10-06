@@ -8,7 +8,12 @@
 #endif
 
 // ----VARIABLES----
+#define HOME_BIT    0x01
+#define STOP_BIT    0x02
+
 extern QueueHandle_t xQueue_stepper_command; // This external reference has to be defined again in Strand.c
+
+extern TaskHandle_t stepper_task_handle;
 
 
 // ----FUNCTIONS----
