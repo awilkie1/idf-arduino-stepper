@@ -15,11 +15,17 @@ stepper_command_t stepper_commands;
 
 HardwareSerial SerialPort(2);
 const int uart_buffer_size = (1024 * 2);
-#define RXD2 16
-#define TXD2 17
-#define EN_PIN           5 // Enable
-#define DIR_PIN          14 // Direction
-#define STEP_PIN         12 // Step
+// #define RXD2 16
+// #define TXD2 17
+// #define EN_PIN           5 // Enable
+// #define DIR_PIN          14 // Direction
+// #define STEP_PIN         12 // Step
+
+#define RXD2             16  //UART
+#define TXD2             17  //UART
+#define EN_PIN           5   // Enable
+#define DIR_PIN          19  // Direction
+#define STEP_PIN         18  // Step
 // #define DIR_PIN          19 // Direction (Oliver)
 // #define STEP_PIN         14 // Step  (Oliver)
 #define R_SENSE 0.11f
