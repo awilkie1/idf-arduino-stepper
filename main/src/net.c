@@ -54,10 +54,14 @@ QueueHandle_t xQueue_multicast_task;
 QueueHandle_t xQueue_tcp_task;
 QueueHandle_t xQueue_tcp_respond;
 
+QueueHandle_t xQueue_wave_task;
+wave_t wave = {0};
+
 tcp_task_action_t tcp_queue_value;
 
 location_t device_location;
 stepper_t device_stepper;
+
 
 //NVS
 
@@ -90,6 +94,7 @@ int listen_sock;
 int err;
 char respond_value[COMMAND_ITEM_SIZE];
 
+//PARAMTER SAVING
 void nvs_init(){
     // Initialize NVS.
     esp_err_t nvs_err = nvs_flash_init();
@@ -155,9 +160,12 @@ void nvs_set_value(char* name, int32_t value){
     }
 
 }
+//LOCATION SAVING
 location_t command_init_location(){
 
   location_t location;
+
+  ESP_LOGI(TAG, "LOAD LOCATION");
 
   location.x = nvs_get_value("location_x");
   location.y = nvs_get_value("location_y");
@@ -173,15 +181,16 @@ esp_err_t command_set_location(location_t location){
 
     return ESP_OK;
 }
-//
+//STEPPER SAVING
 stepper_t command_init_stepper(){
 
+  ESP_LOGI(TAG, "LOAD STEPPER");
   stepper_t stepper;
-
   stepper.current = nvs_get_value("stepper_current");
   stepper.min = nvs_get_value("stepper_min");
   stepper.max = nvs_get_value("stepper_max");
   stepper.target = nvs_get_value("stepper_target");
+  stepper.number = nvs_get_value("stepper_number");
   return stepper;
 }
 esp_err_t command_set_stepper(stepper_t stepper){
@@ -190,11 +199,11 @@ esp_err_t command_set_stepper(stepper_t stepper){
     nvs_set_value("stepper_min",stepper.min);
     nvs_set_value("stepper_max",stepper.max);
     nvs_set_value("stepper_target",stepper.target);
+    nvs_set_value("stepper_number",stepper.number);
     device_stepper = command_init_stepper();
 
     return ESP_OK;
 }
-
 void setPramamter(int type, int value){
 
     ESP_LOGI(TAG, "SET PARAMTER %d : %d", type, value);
@@ -203,7 +212,7 @@ void setPramamter(int type, int value){
     if (type==2) device_stepper.min = value;
     if (type==3) device_stepper.max = value;
     if (type==4) device_stepper.target = value;
-
+    if (type==5) device_stepper.number = value;
     
 }
 void saveParamters(){
@@ -212,11 +221,11 @@ void saveParamters(){
     step.min = device_stepper.min;
     step.max = device_stepper.max;
     step.target = device_stepper.target;
+    step.number = device_stepper.number;
     command_set_stepper(step);
 
-    ESP_LOGI(TAG, "SET PARAMTER %d : %d : %d : %d", step.current, step.min, step.max, step.target);
+    ESP_LOGI(TAG, "SET PARAMTER %d : %d : %d : %d : %d", step.current, step.min, step.max, step.target,step.number);
 }
-
 //WIFI
 esp_err_t event_handler(void *ctx, system_event_t *event)
 
@@ -474,7 +483,7 @@ void broadcast_task(void *pvParameters)
     }
    
 }
-// add socket to listten on
+
 static int socket_add_ipv4_multicast_group(int sock, bool assign_source_if)
 {
     struct ip_mreq imreq = { 0 };
@@ -789,15 +798,15 @@ void tcp_task(void *pvParameters)
 }
 
 void command_ota(void){
+    saveParamters();
     //xTaskCreate(&ota_task, "ota_task", 16384, NULL, 3, NULL);
     xTaskCreate(&simple_ota_example_task, "ota_example_task", 8192, NULL, 5, NULL);
 }
 static esp_err_t command_reset(){
+    saveParamters();
     esp_restart();
     return ESP_OK;
 }
-
-
 //MESSAGING
 void server_ping(char* command){
     char mac_ip_data[256];
@@ -841,10 +850,82 @@ void updateUdp(){
     char cmd[10];
     sprintf(cmd,"update");
     char respond[30];
-    sprintf(respond, "%d %d %d %d", device_stepper.current, device_stepper.min, device_stepper.max,device_stepper.target);
+    sprintf(respond, "%d %d %d %d %d", device_stepper.current, device_stepper.min, device_stepper.max,device_stepper.target,device_stepper.number);
     sendMessage(cmd, respond);
 }
 
+int deviceDistanceSpeed(int x, int y, int z, int s){
+
+  int64_t x_Square = device_location.x - x;
+  int64_t y_Square = device_location.y - y;
+  int64_t z_Square = device_location.z - z;
+
+  int64_t distance = (int64_t)abs(sqrtf(pow(x_Square, 2)  + pow(y_Square, 2) + pow(z_Square, 2)));
+
+  float speed = (float)(s / 10.0);
+
+  ESP_LOGI(TAG, "Speed %f", speed);
+
+  float distanceFromStart = (float)( distance  / speed);
+
+  ESP_LOGI(TAG, "Distance From Start Float %f", distanceFromStart);
+
+  // int64_t distanceFromStart = (int64_t)( distance  / (s / 10));
+  // ESP_LOGI(TAG, "Distance From Start %llu", distanceFromStart);
+
+  return distanceFromStart;
+}
+
+void wave_task(void *args) {
+
+   xQueue_wave_task = xQueueCreate(10, sizeof(wave_t));
+   if (xQueue_wave_task == NULL) ESP_LOGE(TAG, "Unable to create wave command queue");
+   
+    while(1) {
+         if (xQueueReceive(xQueue_wave_task, &wave, portMAX_DELAY)) {
+            ESP_LOGI(TAG, "X : %d Y : %d Z : %d SPEED : %d", wave.x, wave.y, wave.z ,wave.speed);
+            float delay = deviceDistanceSpeed(wave.x, wave.y, wave.z ,wave.speed);
+            ESP_LOGI(TAG, "DELAY : %f", delay);
+            vTaskDelay(pdMS_TO_TICKS(delay));
+            ESP_LOGI(TAG, "TYPE : %d MOVE : %d SPEED : %d ACCEL : %d MIN : %d MAX : %d", wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
+            command_move(wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
+            vTaskDelay(pdMS_TO_TICKS(10));
+
+            // OVERWRITE
+            // This command sends a task notification with value '3' to the stepper task. Use that block of code to overwrite the stepper loop
+            //xTaskNotify(stepper_task_handle, 3, eSetValueWithOverwrite);
+         }
+    }
+    vTaskDelete(NULL); // clean up after ourselves
+}
+
+void wave_command(int x, int y, int z, int speed, int type, int move, int stepper_speed, int accel, int min, int max){
+    wave_t wave_action;
+    wave_action.x = x;
+    wave_action.y = y;
+    wave_action.z = z;
+    wave_action.speed = speed;
+
+    // wave_action.stepper_type = type;
+    // wave_action.stepper_move = move;
+    // wave_action.stepper_speed = speed;
+    // wave_action.stepper_accel = accel;
+    // wave_action.stepper_min = min;
+    // wave_action.stepper_max = max;
+
+    stepper_command_t stepper_action;
+    stepper_action.move = move;
+    stepper_action.type = type;
+    stepper_action.speed = stepper_speed;
+    stepper_action.accel = accel;
+    stepper_action.min = min;
+    stepper_action.max = max;
+
+    wave_action.wave_stepper = stepper_action;
+
+    xQueueSendToBack(xQueue_wave_task, (void *) &wave_action, 0);            
+
+}
 //MESSAGE QUE
 void command_handler(char * queue_value, int type){
 
@@ -862,12 +943,32 @@ void command_handler(char * queue_value, int type){
         if (strcmp(command_line[0], "reset") == 0){
             command_reset();
         }
-        if (strcmp(command_line[0], "stepperMove") == 0){
-            command_move(0, atoi(command_line[1]),atoi(command_line[2]),device_stepper.min, device_stepper.max);
+         if (strcmp(command_line[0], "stop") == 0){
+            //xTaskNotify(stepper_task_handle, 3, eSetValueWithoutOverwrite);
+            // xTaskNotify(stepper_task_handle, 3, eSetValueWithOverwrite);
+            ESP_LOGW(TAG,"Stop command");
+            xTaskNotify(stepper_task_handle, STOP_BIT, eSetBits); 
         }
-        if (strcmp(command_line[0], "stepperTranslate") == 0){
-            command_move(1, atoi(command_line[1]), 2800, device_stepper.min, device_stepper.max);
+        //MOVEMENT TYPES/BEHAVIOURS
+        if (strcmp(command_line[0], "home") == 0){//Relative Move
+            command_move(0, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]),device_stepper.min, device_stepper.max);
         }
+        if (strcmp(command_line[0], "stepperMove") == 0){//Relative Move
+            command_move(0, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]),device_stepper.min, device_stepper.max);
+        }
+        if (strcmp(command_line[0], "stepperTranslate") == 0){//Move to location
+            command_move(1, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), device_stepper.min, device_stepper.max);
+        }
+        
+        if (strcmp(command_line[0], "stepperNumTranslate") == 0){
+            int selectedCommand = device_stepper.number + 2;
+            command_move(1, atoi(command_line[selectedCommand]), atoi(command_line[1]), atoi(command_line[2]), device_stepper.min, device_stepper.max);
+            ESP_LOGI(TAG,"STEPPER NUMBER MOVE %d : %d", selectedCommand, atoi(command_line[selectedCommand]));
+        }
+        if (strcmp(command_line[0], "stepperWave") == 0){//Move to location
+            wave_command(atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), atoi(command_line[4]), atoi(command_line[5]), atoi(command_line[6]), atoi(command_line[7]), atoi(command_line[8]),device_stepper.min, device_stepper.max);       
+        }
+        //SETTING PARAMTERS UDP
         if (strcmp(command_line[0], "setMin") == 0){
              ESP_LOGI(TAG, "SET MIN");
             setPramamter(2, atoi(command_line[1]));
@@ -880,6 +981,32 @@ void command_handler(char * queue_value, int type){
             setPramamter(3, atoi(command_line[1]));
             saveParamters();
             updateUdp();
+            return;
+        }
+        if (strcmp(command_line[0], "setNumber") == 0){
+            ESP_LOGI(TAG, "SET NUMBER");
+            setPramamter(5, atoi(command_line[1]));
+            saveParamters();
+            updateUdp();
+            return;
+        }
+        if (strcmp(command_line[0], "set_location") == 0){
+             location_t loc;
+            loc.x = atoi(command_line[1]);
+            loc.y = atoi(command_line[2]);
+            loc.z = atoi(command_line[3]);
+
+            command_set_location(loc);
+            //ESP_LOGI(TAG, "LOCATION x:%d y:%d: z:%d", atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]));
+
+            char respond[3];
+            strncpy(respond, "OK" ,3);
+            if( xQueueSendToBack( xQueue_tcp_respond, ( void * ) &respond, ( TickType_t ) 10 ) != pdPASS )
+                {
+                    //* Failed to post the message, even after 10 ticks. */
+                    ESP_LOGW(TAG, "Unable to add command to TCP queue");
+                    return;
+                }
             return;
         }
         if (strcmp(command_line[0], "update") == 0){
@@ -900,6 +1027,7 @@ void command_handler(char * queue_value, int type){
                     return;
                 }
             }
+            //SETTING PARAMTERS UDP
             if (strncmp(command_line[0], "set_location" ,strlen("set_location")) == 0){
                 location_t loc;
                 loc.x = atoi(command_line[1]);
@@ -950,6 +1078,21 @@ void command_handler(char * queue_value, int type){
                 }
 
             }   
+            if (strncmp(command_line[0], "setNumber" ,strlen("setNumber")) == 0){
+                ESP_LOGI(TAG, "SET NUMBER");
+                setPramamter(5, atoi(command_line[1]));
+                saveParamters();
+                //ESP_LOGI(TAG, "LOCATION x:%d y:%d: z:%d", atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]));
+                char respond[3];
+                strncpy(respond, "OK" ,3);
+                if( xQueueSendToBack( xQueue_tcp_respond, ( void * ) &respond, ( TickType_t ) 10 ) != pdPASS )
+                {
+                    //* Failed to post the message, even after 10 ticks. */
+                    ESP_LOGW(TAG, "Unable to add command to TCP queue");
+                    return;
+                }
+
+            }  
             if (strncmp(command_line[0], "update" ,strlen("get_location")) == 0){
 
                 char respond[40];

@@ -52,6 +52,8 @@ TaskHandle_t tcp_task_handle = NULL;
 TaskHandle_t stepper_task_handle = NULL;
 //TaskHandle_t sensor_task_handle = NULL;
 
+TaskHandle_t wave_task_handle = NULL;
+
 QueueSetHandle_t queue_set;
 QueueSetMemberHandle_t queue_set_member;
 
@@ -79,20 +81,25 @@ extern "C" void app_main() {
    device_stepper = command_init_stepper();
     
    xTaskCreate(&tcp_task, "tcp_task", 3072, NULL, 3, &tcp_task_handle);
-   xTaskCreate(&multicast_task, "multicast_task", 4096, NULL, 10, &multicast_task_handle);
-   xTaskCreate(&broadcast_task, "broadcast_task", 4096, NULL, 10, &broadcast_task_handle);
+   xTaskCreate(&multicast_task, "multicast_task", 4096, NULL, 3, &multicast_task_handle);
+   xTaskCreate(&broadcast_task, "broadcast_task", 4096, NULL, 3, &broadcast_task_handle);
    
-    char multicast_queue_value[COMMAND_ITEM_SIZE];
-    char broadcast_queue_value[COMMAND_ITEM_SIZE];
+   char multicast_queue_value[COMMAND_ITEM_SIZE];
+   char broadcast_queue_value[COMMAND_ITEM_SIZE];
     //char tcp_queue_value[COMMAND_ITEM_SIZE];
    
    server_ping("boot");//Sends the boot up message to the server
+   
+   ESP_LOGI(TAG,"Boot Position %d",device_stepper.current);
+   init_strand(device_stepper.current); // Start the stepper motor system
 
-   init_strand(device_stepper.min); // Start the stepper motor system
+   xTaskCreatePinnedToCore(&stepper_task, "stepper_task", 4*1024, NULL, 4, &stepper_task_handle, 1);
 
-   xTaskCreatePinnedToCore(&stepper_task, "stepper_task", 2*1024, NULL, 2, &stepper_task_handle, 0);
+   esp_task_wdt_delete(NULL); // remove from watchdog
 
-   //xTaskCreatePinnedToCore(&sensor_task, "sensor_task", 1024, NULL, 3, &sensor_task_handle, 0);
+   // xTaskCreatePinnedToCore(&sensor_task, "sensor_task", 1024, NULL, 3, &sensor_task_handle, 0);
+
+   xTaskCreatePinnedToCore(&wave_task, "wave_tasks", 2*1024, NULL, 3, &wave_task_handle, 0);
 
    String inString = ""; // String to hold input
    int inNum = 0;
@@ -114,6 +121,11 @@ extern "C" void app_main() {
    //    }
    //    vTaskDelay(pdMS_TO_TICKS(100));
    // }
+   for (int i=0; i<10; i++){
+      command_move(0, 5000, 1600, 3000, 0, 10000);
+      command_move(0, -5000, 1600, 3000, 0, 10000);
+      // vTaskDelay(pdMS_TO_TICKS(1000));
+   }
 
    queue_set = xQueueCreateSet(3);                    // Create QueueSet
    vTaskDelay(10);
@@ -121,6 +133,14 @@ extern "C" void app_main() {
    xQueueAddToSet(xQueue_multicast_task, queue_set);
    xQueueAddToSet(xQueue_broadcast_task, queue_set);
    xQueueAddToSet(xQueue_tcp_task, queue_set);
+
+   // for (int i=0; i<2; i++){
+   //    command_move(0, 10000, 800, 3000, 0, 10000);
+   //    command_move(0, -10000, 800, 3000, 0, 10000);
+   //    // vTaskDelay(pdMS_TO_TICKS(1000));
+   // }
+   // command_move(0, 40000, 3000, 3000, 0, 10000);
+
 
    // Block the task until we receive a value from any of the queues
    while ((queue_set_member = xQueueSelectFromSet(queue_set, portMAX_DELAY))) {

@@ -20,6 +20,7 @@
 #include "freertos/queue.h"
 #include "freertos/timers.h"
 #include "freertos/event_groups.h"
+#include "esp_task_wdt.h"
 
 #ifdef __cplusplus
     extern "C" {
@@ -30,8 +31,8 @@
 #define RANDOM_OTA_DELAY_PERIOD 5 // seconds over which OTA can be randomly delayed to avoid flooding the network at the same time
 
 // WIFI Network Connection
-// #define _WIFI_SSID "_bloom"
-#define _WIFI_SSID "_bloom_strand" // Ollie's test env
+#define _WIFI_SSID "_bloom_strand"
+// #define _WIFI_SSID "_bloom_mesh" // Ollie's test env
 #define _WIFI_PASS "sqU1d0ak"
 
 #define SERVER_IP_ADDRESS "10.0.2.10"
@@ -65,13 +66,15 @@ typedef struct stepper {
     int32_t min;
     int32_t max;
     int32_t target;
+    int32_t number;
 } stepper_t;
 
 typedef struct stepper_command {
     int min;
     int max;
     int speed;
-    long move;
+    int accel;
+    int move;
     int type;
 } stepper_command_t;
 
@@ -79,6 +82,21 @@ typedef struct {
    int   action;
    char  action_value[COMMAND_ITEM_SIZE];
 } tcp_task_action_t;
+
+typedef struct wave {
+    int32_t x;
+    int32_t y;
+    int32_t z;
+    int32_t speed;
+
+    stepper_command_t wave_stepper;
+    // int stepper_min;
+    // int stepper_max;
+    // int stepper_speed;
+    // int stepper_accel;
+    // long stepper_move;
+    // int stepper_type;
+} wave_t;
 
 #ifdef __cplusplus
   }
