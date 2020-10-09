@@ -92,7 +92,6 @@ extern "C" void app_main() {
    
    ESP_LOGI(TAG,"Boot Position %d",device_stepper.current);
    init_strand(device_stepper.current); // Start the stepper motor system
-<<<<<<< HEAD
 
    xTaskCreatePinnedToCore(&stepper_task, "stepper_task", 4*1024, NULL, 4, &stepper_task_handle, 1);
 
@@ -100,15 +99,6 @@ extern "C" void app_main() {
 
    // xTaskCreatePinnedToCore(&sensor_task, "sensor_task", 1024, NULL, 3, &sensor_task_handle, 0);
 
-=======
-
-   xTaskCreatePinnedToCore(&stepper_task, "stepper_task", 4*1024, NULL, 4, &stepper_task_handle, 1);
-
-   esp_task_wdt_delete(NULL); // remove from watchdog
-
-   // xTaskCreatePinnedToCore(&sensor_task, "sensor_task", 1024, NULL, 3, &sensor_task_handle, 0);
-
->>>>>>> guiinteration
    xTaskCreatePinnedToCore(&wave_task, "wave_tasks", 2*1024, NULL, 3, &wave_task_handle, 0);
 
    String inString = ""; // String to hold input

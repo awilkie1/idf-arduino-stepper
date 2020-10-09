@@ -32,6 +32,8 @@ const int uart_buffer_size = (1024 * 2);
 //homiing buttion stuff
 // #define HOME_PIN         32 // HOME (Oliver)
 #define HOME_PIN         23 // HOME
+#define STALL_VALUE     150
+#define TCOOL_VALUE     150
 
 //TMC2208Stepper driver(&SerialPort, R_SENSE); 
 TMC2209Stepper driver(&SerialPort, R_SENSE , DRIVER_ADDRESS);
@@ -102,28 +104,34 @@ void sensor_task(void *args) {
 
 void init_strand(int bootPosition) {
     // Start UART and TMC2208
-    pinMode(EN_PIN, OUTPUT);
-    pinMode(STEP_PIN, OUTPUT);
-    pinMode(DIR_PIN, OUTPUT);
-    digitalWrite(EN_PIN, LOW);      // Enable driver in hardware
+   pinMode(EN_PIN, OUTPUT);
+   pinMode(STEP_PIN, OUTPUT);
+   pinMode(DIR_PIN, OUTPUT);
+   digitalWrite(EN_PIN, LOW);      // Enable driver in hardware
+   
+   // Driver Setup
+   SerialPort.begin(115200);
+   driver.begin();
+   driver.pdn_disable(true);               // Use PDN/UART pin for communication
+   driver.I_scale_analog(false);           // Use internal voltage reference
+   driver.mstep_reg_select(1);             // necessary for TMC2208 to set microstep register with UART
+   driver.toff(3);                         // Enables driver in software
+   driver.rms_current(1200);               // Set motor RMS current
+   driver.microsteps(MICROSTEPPING);       // Set microsteps to 1/16th
+   driver.en_spreadCycle(false);           // Toggle spr
+   driver.VACTUAL(0);                      // make sure velocity is set to 0
+   driver.pwm_autoscale(true);             // Needed for stealthChop
+//    driver.SGTHRS(STALL_VALUE);
 
     //STALLGUARDING was miking some funny sounds 
     // driver.TCOOLTHRS(0xFFFFF); // 20bit max
-    // //driver.THIGH(0);
-    // driver.semin(0);
-    // driver.semax(5);
-    // driver.sedn(0b01);
-    // //driver.sgt(STALL_VALUE);
-    // driver.SGTHRS(STALL_VALUE);
-
-    //STALLGUARDING was miking some funny sounds 
+    //driver.THIGH(0);
     // driver.TCOOLTHRS(0xFFFFF); // 20bit max
-    // //driver.THIGH(0);
-    // driver.semin(0);
-    // driver.semax(5);
-    // driver.sedn(0b01);
-    // //driver.sgt(STALL_VALUE);
-    // driver.SGTHRS(STALL_VALUE);
+    driver.TCOOLTHRS(TCOOL_VALUE); // 20bit max
+    driver.semin(1);
+    driver.semax(5);
+    driver.sedn(0b01);
+    driver.SGTHRS(STALL_VALUE);
 
    // Stepper Library Setup
    stepper.setMaxSpeed(1400*MICROSTEPPING); // 100mm/s @ 80 steps/mm
@@ -173,8 +181,10 @@ void init_strand(int bootPosition) {
 
     // Set stepper interrupt
 
-   pinMode(button1.PIN, INPUT_PULLUP);
-   attachInterrupt(digitalPinToInterrupt(button1.PIN), isr, FALLING);
+//    pinMode(button1.PIN, INPUT_PULLUP);
+//    attachInterrupt(digitalPinToInterrupt(button1.PIN), isr, FALLING);
+   pinMode(button1.PIN, INPUT_PULLDOWN);
+   attachInterrupt(digitalPinToInterrupt(button1.PIN), isr, RISING);
 }
 
 void stepper_task(void *args) {
@@ -236,6 +246,8 @@ void stepper_task(void *args) {
             stepper.move(stepper_move);
             // Run the stepper loop until we get to our destination
             while(stepper.distanceToGo() != 0) {
+                static uint32_t last_time=0;
+                uint32_t ms = millis();
                 // if (ulTaskNotifyTake(pdTRUE, 0) > 1) {
                 //     ESP_LOGW(TAG, "Notify receive");
                 // }
@@ -250,12 +262,15 @@ void stepper_task(void *args) {
                     ESP_LOGW(TAG, "Notification Received: %i", notify);
                     if (notify & HOME_BIT) {
                         if (home==true) {//Alowing to be wound out
+                            driver.toff(0); // turn off compeletely (for safety)
+                            driver.toff(4); // and back on again
                             stepper.setCurrentPosition(0);
                             stepper.runToNewPosition(600);
                             home=false;
                             setPramamter(1, 0);
                             currentPosition = 0;
                             saveParamters();
+                            stepper.setCurrentPosition(stepper.targetPosition());
                         } else {//Home Senced 
                             Serial.printf("SENCED");
                             home = true; 
@@ -267,12 +282,31 @@ void stepper_task(void *args) {
                         // Check if we have received a notificaiton value to overrid the stepper task
                         //ESP_LOGI(TAG, "Stepper STOP");
                         //ESP_LOGW(TAG, "Notify receive", ulTaskNotifyTake(pdTRUE, 0););
-                        stepper.stop(); 
+                        stepper.stop();
+                        stepper.setCurrentPosition(stepper.targetPosition());
+                        
                         notify = 0;
+                        break;
                     }
                 }
 
+                // while (Serial.available() > 0) {
+                //     int8_t read_byte = Serial.read();
+
+                    // if (driver.SG_RESULT() < 200) {
+                    //     driver.toff(0);
+                    //     Serial.println("Motor stop");
+                    //     break;
+                    // }
+                // }
+
                 stepper.run();
+                // if((ms-last_time) > 100) { //run every 0.1s
+                //     last_time = ms;
+
+                //     ESP_LOGI(TAG, "Velocity: %i", driver.TSTEP());
+                // }
+                
                 // vTaskDelay(1);
             }
 
