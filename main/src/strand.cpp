@@ -32,8 +32,9 @@ const int uart_buffer_size = (1024 * 2);
 //homiing buttion stuff
 // #define HOME_PIN         32 // HOME (Oliver)
 #define HOME_PIN         23 // HOME
-#define STALL_VALUE     150
-#define TCOOL_VALUE     150
+#define TCOOL_VALUE     150 // 150
+#define STALL_VALUE     140 // 150
+#define TPWMTHRS_THR    10 // 140
 
 //TMC2208Stepper driver(&SerialPort, R_SENSE); 
 TMC2209Stepper driver(&SerialPort, R_SENSE , DRIVER_ADDRESS);
@@ -176,8 +177,8 @@ void init_strand(int bootPosition) {
         * - If StealthChop is active while too fast, there will also be noise
         * For the 15:1 stepper, values between 70-120 is optimal 
     */
-    uint32_t thr = 140; // 70-120 is optimal
-    driver.TPWMTHRS(thr);
+
+    driver.TPWMTHRS(TPWMTHRS_THR);
 
     // Set stepper interrupt
 
@@ -206,7 +207,7 @@ void stepper_task(void *args) {
 
         if (xQueueReceive(xQueue_stepper_command, &stepper_commands, portMAX_DELAY)) {
 
-            // driver.TPWMTHRS(thr);
+            // driver.(thr);
             // thr+=20;
             // ESP_LOGW(TAG, "Threshold: %i", thr);
             //if type 0 DONT record the position (relative)
@@ -261,21 +262,21 @@ void stepper_task(void *args) {
                 if (xResult  == pdPASS) {
                     ESP_LOGW(TAG, "Notification Received: %i", notify);
                     if (notify & HOME_BIT) {
-                        if (home==true) {//Alowing to be wound out
+                        // if (home==true) {//Alowing to be wound out
                             driver.toff(0); // turn off compeletely (for safety)
                             driver.toff(4); // and back on again
                             stepper.setCurrentPosition(0);
                             stepper.runToNewPosition(600);
                             home=false;
-                            setPramamter(1, 0);
+                            // setPramamter(1, 0);
                             currentPosition = 0;
-                            saveParamters();
-                            stepper.setCurrentPosition(stepper.targetPosition());
-                        } else {//Home Senced 
-                            Serial.printf("SENCED");
-                            home = true; 
-                            button1.pressed = false; //Needed to flip off
-                        }
+                            // saveParamters();
+                            // stepper.setCurrentPosition(stepper.targetPosition());
+                        // } else {//Home Senced 
+                        //     Serial.printf("SENCED");
+                        //     home = true; 
+                        //     button1.pressed = false; //Needed to flip off
+                        // }
                         notify = 0;
                     }
                     if (notify & STOP_BIT) {
@@ -283,10 +284,10 @@ void stepper_task(void *args) {
                         //ESP_LOGI(TAG, "Stepper STOP");
                         //ESP_LOGW(TAG, "Notify receive", ulTaskNotifyTake(pdTRUE, 0););
                         stepper.stop();
-                        stepper.setCurrentPosition(stepper.targetPosition());
+                        // stepper.setCurrentPosition(stepper.targetPosition());
                         
                         notify = 0;
-                        break;
+                        // break;
                     }
                 }
 

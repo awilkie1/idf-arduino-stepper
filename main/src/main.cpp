@@ -121,11 +121,11 @@ extern "C" void app_main() {
    //    }
    //    vTaskDelay(pdMS_TO_TICKS(100));
    // }
-   for (int i=0; i<10; i++){
-      command_move(0, 5000, 1600, 3000, 0, 10000);
-      command_move(0, -5000, 1600, 3000, 0, 10000);
-      // vTaskDelay(pdMS_TO_TICKS(1000));
-   }
+   // for (int i=0; i<10; i++){
+   //    command_move(0, 5000, 1600, 3000, 0, 10000);
+   //    command_move(0, -5000, 1600, 3000, 0, 10000);
+   //    // vTaskDelay(pdMS_TO_TICKS(1000));
+   // }
 
    queue_set = xQueueCreateSet(3);                    // Create QueueSet
    vTaskDelay(10);
