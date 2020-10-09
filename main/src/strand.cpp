@@ -116,6 +116,15 @@ void init_strand(int bootPosition) {
     // //driver.sgt(STALL_VALUE);
     // driver.SGTHRS(STALL_VALUE);
 
+    //STALLGUARDING was miking some funny sounds 
+    // driver.TCOOLTHRS(0xFFFFF); // 20bit max
+    // //driver.THIGH(0);
+    // driver.semin(0);
+    // driver.semax(5);
+    // driver.sedn(0b01);
+    // //driver.sgt(STALL_VALUE);
+    // driver.SGTHRS(STALL_VALUE);
+
    // Stepper Library Setup
    stepper.setMaxSpeed(1400*MICROSTEPPING); // 100mm/s @ 80 steps/mm
    stepper.setAcceleration(1000*MICROSTEPPING); // 2000mm/s^2
