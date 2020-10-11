@@ -53,6 +53,8 @@ TaskHandle_t stepper_task_handle = NULL;
 TaskHandle_t sensor_task_handle = NULL;
 
 TaskHandle_t wave_task_handle = NULL;
+TaskHandle_t sine_task_handle = NULL;
+
 
 QueueSetHandle_t queue_set;
 QueueSetMemberHandle_t queue_set_member;
@@ -100,6 +102,7 @@ extern "C" void app_main() {
    // xTaskCreatePinnedToCore(&sensor_task, "sensor_task", 1024, NULL, 3, &sensor_task_handle, 0);
 
    xTaskCreatePinnedToCore(&wave_task, "wave_tasks", 2*1024, NULL, 3, &wave_task_handle, 0);
+   xTaskCreatePinnedToCore(&sine_task, "sine_tasks", 2*1024, NULL, 3, &sine_task_handle, 0);
 
    String inString = ""; // String to hold input
    int inNum = 0;
@@ -121,11 +124,7 @@ extern "C" void app_main() {
    //    }
    //    vTaskDelay(pdMS_TO_TICKS(100));
    // }
-   // for (int i=0; i<10; i++){
-   //    command_move(0, 5000, 1600, 3000, 0, 10000);
-   //    command_move(0, -5000, 1600, 3000, 0, 10000);
-   //    // vTaskDelay(pdMS_TO_TICKS(1000));
-   // }
+
 
    queue_set = xQueueCreateSet(3);                    // Create QueueSet
    vTaskDelay(10);

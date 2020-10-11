@@ -74,7 +74,26 @@ float factor = 22.6; // wheel ratio steps per mm
 void command_move(int type, int move, int speed, int accel, int min, int max){
     //xQueueSendToBack(xQueue_stepper_command, (void *) &move, 0);
     stepper_command_t test_action;
-    test_action.move = move;
+    //int stepper_target = 0;
+    if (type == 1){
+        if (move <= min) {
+            ESP_LOGI(TAG, "MIN");
+            test_action.move = min;
+        }
+        else if (move  >= max){
+            ESP_LOGI(TAG, "MAX"); 
+            test_action.move= max;
+        }
+        else {
+            test_action.move = move;
+        }
+    
+        //test_action.move = (stepper_target - currentPosition) * factor;//works out based on mm
+    } else if (type == 0){
+        test_action.move = move;
+    }
+
+
     test_action.type = type;
 
     test_action.speed = speed;
@@ -196,11 +215,9 @@ void stepper_task(void *args) {
     if (xQueue_stepper_command == NULL) ESP_LOGE(TAG, "Unable to create stepper command queue");
 
     int stepper_move = 0; // storage for incoming stepper command
-    int stepper_target = 0;
     
     BaseType_t xResult;
     uint32_t notify = 0;
-    
 
     ESP_LOGI(TAG, "Start Stepper Task");
     while(1) {
@@ -218,28 +235,18 @@ void stepper_task(void *args) {
 
             if (stepper_commands.type == 1){
 
-                if (stepper_commands.move <= stepper_commands.min) {
-                    ESP_LOGI(TAG, "MIN");
-                    stepper_target = stepper_commands.min;
-                }
-                else if (stepper_commands.move  >= stepper_commands.max){
-                    ESP_LOGI(TAG, "MAX"); 
-                    stepper_target = stepper_commands.max;
-                }
-                else {
-                    stepper_target = stepper_commands.move;
-                }
-                stepper_move = (stepper_target - currentPosition) * factor;//works out based on mm
+                stepper_move = (stepper_commands.move - currentPosition) * factor;//works out based on mm
 
                 ESP_LOGI(TAG, "Stepper Move To : %d Dif %d : Current : %d",stepper_commands.move, stepper_move, currentPosition);
 
-                currentPosition = stepper_target;
-                 //save out and back to main = currentPosition;
+                currentPosition = stepper_commands.move;
+                //save out and back to main = currentPosition;
             }
             if (stepper_commands.type == 0){
                 stepper_move = stepper_commands.move;
                 ESP_LOGI(TAG, "Stepper Move %d : %d", stepper_move, currentPosition);
             }
+
             //if type 1 record the position 
             //Print
             ESP_LOGI(TAG, "Stepper Move %d", stepper_move);
@@ -262,21 +269,14 @@ void stepper_task(void *args) {
                 if (xResult  == pdPASS) {
                     ESP_LOGW(TAG, "Notification Received: %i", notify);
                     if (notify & HOME_BIT) {
-                        // if (home==true) {//Alowing to be wound out
-                            driver.toff(0); // turn off compeletely (for safety)
-                            driver.toff(4); // and back on again
-                            stepper.setCurrentPosition(0);
-                            stepper.runToNewPosition(600);
-                            home=false;
-                            // setPramamter(1, 0);
-                            currentPosition = 0;
-                            // saveParamters();
-                            // stepper.setCurrentPosition(stepper.targetPosition());
-                        // } else {//Home Senced 
-                        //     Serial.printf("SENCED");
-                        //     home = true; 
-                        //     button1.pressed = false; //Needed to flip off
-                        // }
+                        driver.toff(0); // turn off compeletely (for safety)
+                        driver.toff(4); // and back on again
+                        stepper.setCurrentPosition(0);
+                        stepper.runToNewPosition(600);
+                        home=false;
+                        setPramamter(1, 0);
+                        currentPosition = 0;
+                        saveParamters();
                         notify = 0;
                     }
                     if (notify & STOP_BIT) {

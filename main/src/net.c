@@ -56,12 +56,13 @@ QueueHandle_t xQueue_tcp_respond;
 
 QueueHandle_t xQueue_wave_task;
 wave_t wave = {0};
+QueueHandle_t xQueue_sine_task;
+sine_t sine = {0};
 
 tcp_task_action_t tcp_queue_value;
 
 location_t device_location;
 stepper_t device_stepper;
-
 
 //NVS
 
@@ -374,7 +375,6 @@ int get_command_line(char* a, int type){
    return i;
 
 }
-
 void send_udp(char* udp_message, char* ip_address, int port){
 
     char buffer[256];
@@ -853,7 +853,6 @@ void updateUdp(){
     sprintf(respond, "%d %d %d %d %d", device_stepper.current, device_stepper.min, device_stepper.max,device_stepper.target,device_stepper.number);
     sendMessage(cmd, respond);
 }
-
 int deviceDistanceSpeed(int x, int y, int z, int s){
 
   int64_t x_Square = device_location.x - x;
@@ -898,7 +897,6 @@ void wave_task(void *args) {
     }
     vTaskDelete(NULL); // clean up after ourselves
 }
-
 void wave_command(int x, int y, int z, int speed, int type, int move, int stepper_speed, int accel, int min, int max){
     wave_t wave_action;
     wave_action.x = x;
@@ -926,6 +924,53 @@ void wave_command(int x, int y, int z, int speed, int type, int move, int steppe
     xQueueSendToBack(xQueue_wave_task, (void *) &wave_action, 0);            
 
 }
+void sine_task(void *args) {
+
+   xQueue_sine_task = xQueueCreate(10, sizeof(sine_t));
+   if (xQueue_sine_task == NULL) ESP_LOGE(TAG, "Unable to create save command queue");
+   
+    while(1) {
+         if (xQueueReceive(xQueue_sine_task, &sine, portMAX_DELAY)) {
+            int top = sine.sine_stepper.move + sine.offset;
+            int bottom = sine.sine_stepper.move - sine.offset;
+            ESP_LOGI(TAG, "TYPE : %d MOVE : %d SPEED : %d ACCEL : %d MIN : %d MAX : %d", sine.sine_stepper.type, sine.sine_stepper.move, sine.sine_stepper.speed, sine.sine_stepper.accel,sine.sine_stepper.min, sine.sine_stepper.max);
+            
+            for (int i = 0; i<sine.loops; i++) {
+                if (i%2 ==0){
+                    command_move(sine.sine_stepper.type, bottom, sine.sine_stepper.speed, sine.sine_stepper.accel,sine.sine_stepper.min, sine.sine_stepper.max);
+                } else {
+                    command_move(sine.sine_stepper.type, top, sine.sine_stepper.speed, sine.sine_stepper.accel,sine.sine_stepper.min, sine.sine_stepper.max);
+                }
+                vTaskDelay(pdMS_TO_TICKS(10));
+            }
+            command_move(sine.sine_stepper.type, sine.sine_stepper.move, sine.sine_stepper.speed, sine.sine_stepper.accel,sine.sine_stepper.min, sine.sine_stepper.max);
+            vTaskDelay(pdMS_TO_TICKS(10));
+            // OVERWRITE
+            // This command sends a task notification with value '3' to the stepper task. Use that block of code to overwrite the stepper loop
+            //xTaskNotify(stepper_task_handle, 3, eSetValueWithOverwrite);
+         }
+    }
+    vTaskDelete(NULL); // clean up after ourselves
+}
+void sine_command(int type, int move, int stepper_speed, int accel, int min, int max, int loops, int offset){
+    sine_t sine_action;
+    sine_action.loops = loops;
+    sine_action.offset = offset;
+
+    stepper_command_t stepper_action;
+    stepper_action.move = move;
+    stepper_action.type = type;
+    stepper_action.speed = stepper_speed;
+    stepper_action.accel = accel;
+    stepper_action.min = min;
+    stepper_action.max = max;
+
+    sine_action.sine_stepper = stepper_action;
+
+    xQueueSendToBack(xQueue_sine_task, (void *) &sine_action, 0);            
+    ESP_LOGI(TAG, "Sine Task");
+}
+
 //MESSAGE QUE
 void command_handler(char * queue_value, int type){
 
@@ -967,6 +1012,9 @@ void command_handler(char * queue_value, int type){
         }
         if (strcmp(command_line[0], "stepperWave") == 0){//Move to location
             wave_command(atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), atoi(command_line[4]), atoi(command_line[5]), atoi(command_line[6]), atoi(command_line[7]), atoi(command_line[8]),device_stepper.min, device_stepper.max);       
+        }
+        if (strcmp(command_line[0], "stepperSine") == 0){//Move to location
+            sine_command(1, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]),device_stepper.min, device_stepper.max, atoi(command_line[4]), atoi(command_line[5]));       
         }
         //SETTING PARAMTERS UDP
         if (strcmp(command_line[0], "setMin") == 0){

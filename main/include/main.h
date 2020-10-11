@@ -31,8 +31,8 @@
 #define RANDOM_OTA_DELAY_PERIOD 5 // seconds over which OTA can be randomly delayed to avoid flooding the network at the same time
 
 // WIFI Network Connection
-// #define _WIFI_SSID "_bloom_strand"
-#define _WIFI_SSID "_bloom_mesh" // Ollie's test env
+#define _WIFI_SSID "_bloom_strand"
+//#define _WIFI_SSID "_bloom_mesh" // Ollie's test env
 #define _WIFI_PASS "sqU1d0ak"
 
 #define SERVER_IP_ADDRESS "10.0.2.10"
@@ -50,7 +50,7 @@
 #define CONFIG_FIRMWARE_UPGRADE_URL "http://10.0.2.10:8888/bloom/code/firmware.bin"
 
 // number of individual commands allowed in command line
-#define COMMAND_ITEMS 35
+#define COMMAND_ITEMS 40
 
 // maximum command line length in chars
 #define COMMAND_ITEM_SIZE 400
@@ -90,13 +90,13 @@ typedef struct wave {
     int32_t speed;
 
     stepper_command_t wave_stepper;
-    // int stepper_min;
-    // int stepper_max;
-    // int stepper_speed;
-    // int stepper_accel;
-    // long stepper_move;
-    // int stepper_type;
 } wave_t;
+
+typedef struct sine {
+    int32_t loops;
+    int32_t offset;
+    stepper_command_t sine_stepper;
+} sine_t;
 
 #ifdef __cplusplus
   }
