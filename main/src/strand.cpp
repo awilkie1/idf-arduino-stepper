@@ -33,7 +33,7 @@ const int uart_buffer_size = (1024 * 2);
 // #define HOME_PIN         32 // HOME (Oliver)
 #define HOME_PIN         23 // HOME
 #define TCOOL_VALUE     150 // 150
-#define STALL_VALUE     140 // 150
+#define STALL_VALUE     135 // 150
 #define TPWMTHRS_THR    10 // 140
 
 //TMC2208Stepper driver(&SerialPort, R_SENSE); 
@@ -147,6 +147,7 @@ void init_strand(int bootPosition) {
     // driver.TCOOLTHRS(0xFFFFF); // 20bit max
     //driver.THIGH(0);
     // driver.TCOOLTHRS(0xFFFFF); // 20bit max
+    
     driver.TCOOLTHRS(TCOOL_VALUE); // 20bit max
     driver.semin(1);
     driver.semax(5);
@@ -272,7 +273,7 @@ void stepper_task(void *args) {
                         driver.toff(0); // turn off compeletely (for safety)
                         driver.toff(4); // and back on again
                         stepper.setCurrentPosition(0);
-                        stepper.runToNewPosition(600);
+                        stepper.runToNewPosition(4000);
                         home=false;
                         setPramamter(1, 0);
                         currentPosition = 0;

@@ -98,6 +98,16 @@ typedef struct sine {
     stepper_command_t sine_stepper;
 } sine_t;
 
+typedef struct sine_wave {
+    int32_t loops;
+    int32_t offset;
+    int32_t x;
+    int32_t y;
+    int32_t z;
+    int32_t speed;
+    stepper_command_t sine_wave_stepper;
+} sine_wave_t;
+
 #ifdef __cplusplus
   }
 #endif

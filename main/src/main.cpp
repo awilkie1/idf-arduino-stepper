@@ -54,7 +54,7 @@ TaskHandle_t sensor_task_handle = NULL;
 
 TaskHandle_t wave_task_handle = NULL;
 TaskHandle_t sine_task_handle = NULL;
-
+TaskHandle_t sine_wave_task_handle = NULL;
 
 QueueSetHandle_t queue_set;
 QueueSetMemberHandle_t queue_set_member;
@@ -103,6 +103,7 @@ extern "C" void app_main() {
 
    xTaskCreatePinnedToCore(&wave_task, "wave_tasks", 2*1024, NULL, 3, &wave_task_handle, 0);
    xTaskCreatePinnedToCore(&sine_task, "sine_tasks", 2*1024, NULL, 3, &sine_task_handle, 0);
+   xTaskCreatePinnedToCore(&sine_wave_task, "sine_wave_tasks", 2*1024, NULL, 3, &sine_wave_task_handle, 0);
 
    String inString = ""; // String to hold input
    int inNum = 0;
