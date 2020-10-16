@@ -395,7 +395,6 @@ void send_udp(char* udp_message, char* ip_address, int port){
     ESP_LOGI(TAG, "SENT MESSAGE %s : %s @ %d", udp_message, ip_address, port);
     
 }
-
 void broadcast_task(void *pvParameters)
 {
     char rx_buffer[COMMAND_ITEM_SIZE + 1];
@@ -485,7 +484,6 @@ void broadcast_task(void *pvParameters)
     }
    
 }
-
 static int socket_add_ipv4_multicast_group(int sock, bool assign_source_if)
 {
     struct ip_mreq imreq = { 0 };
@@ -527,7 +525,6 @@ static int socket_add_ipv4_multicast_group(int sock, bool assign_source_if)
  err:
     return err;
 }
-
 static int create_multicast_ipv4_socket()
 {
     struct sockaddr_in saddr = { 0 };
@@ -572,12 +569,11 @@ static int create_multicast_ipv4_socket()
         close(sock);
         return -1;
 }
-
 void multicast_task(void *pvParameters)
 {
     while (1) {
 
-        xQueue_multicast_task = xQueueCreate( 5, sizeof(char[COMMAND_ITEM_SIZE]));
+        xQueue_multicast_task = xQueueCreate( 25, sizeof(char[COMMAND_ITEM_SIZE]));
         if( xQueue_multicast_task == NULL )
         {
             ESP_LOGI(TAG, "unable to create multicast command queue");
@@ -651,7 +647,6 @@ void multicast_task(void *pvParameters)
         close(sock);
     }
 }
-
 void tcp_task_init(){
 
         struct sockaddr_in dest_addr;
@@ -680,7 +675,6 @@ void tcp_task_init(){
         }
     
 }
-
 void tcp_server_run(){
 
     ESP_LOGI(TAG, "Socket bound, port %d", PORT);
@@ -766,7 +760,6 @@ void tcp_server_run(){
         }
 
 }
-
 void tcp_task(void *pvParameters)
 {
     
@@ -798,7 +791,6 @@ void tcp_task(void *pvParameters)
     vTaskDelete(NULL);
 
 }
-
 void command_ota(void){
     saveParamters();
     //xTaskCreate(&ota_task, "ota_task", 16384, NULL, 3, NULL);
@@ -876,7 +868,6 @@ int deviceDistanceSpeed(int x, int y, int z, int s){
 
   return distanceFromStart;
 }
-
 void wave_task(void *args) {
 
    xQueue_wave_task = xQueueCreate(10, sizeof(wave_t));
@@ -982,7 +973,6 @@ void sine_command(int type, int move, int stepper_speed, int accel, int min, int
     xQueueSendToBack(xQueue_sine_task, (void *) &sine_action, 0);            
     ESP_LOGI(TAG, "Sine Task");
 }
-
 void sine_wave_task(void *args) {
 
    xQueue_sine_wave_task = xQueueCreate(10, sizeof(sine_wave_t));
@@ -1037,8 +1027,6 @@ void sine_wave_command(int x, int y, int z, int speed, int type, int move, int s
     xQueueSendToBack(xQueue_sine_wave_task, (void *) &sine_wave_action, 0);            
     ESP_LOGI(TAG, "sine_wave Task");
 }
-
-
 //MESSAGE QUE
 void command_handler(char * queue_value, int type){
 

@@ -212,7 +212,7 @@ void stepper_task(void *args) {
     // esp_task_wdt_feed();
     ESP_LOGI(TAG, "Init Stepper Queue");
     // Setup the data structure to store and retrieve stepper commands
-    xQueue_stepper_command = xQueueCreate(10, sizeof(stepper_command_t));
+    xQueue_stepper_command = xQueueCreate(50, sizeof(stepper_command_t));
     if (xQueue_stepper_command == NULL) ESP_LOGE(TAG, "Unable to create stepper command queue");
 
     int stepper_move = 0; // storage for incoming stepper command
