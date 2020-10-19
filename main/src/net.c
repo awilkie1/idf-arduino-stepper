@@ -363,7 +363,7 @@ int get_command_line(char* a, int type){
         if (atoi(buff) == multicast_id){
                 ESP_LOGD(TAG, "[DUPLICATE] id %d", atoi(buff));
                 strncpy(token, "duplicate", 10);
-        }
+        } 
         multicast_id = atoi(buff);
     }
 
@@ -794,7 +794,7 @@ void tcp_task(void *pvParameters)
 void command_ota(void){
     saveParamters();
     //xTaskCreate(&ota_task, "ota_task", 16384, NULL, 3, NULL);
-    xTaskCreate(&simple_ota_example_task, "ota_example_task", 8192, NULL, 5, NULL);
+    xTaskCreate(&simple_ota_example_task, "ota_example_task", 4096, NULL, 5, NULL);
 }
 static esp_err_t command_reset(){
     saveParamters();
@@ -1030,14 +1030,14 @@ void sine_wave_command(int x, int y, int z, int speed, int type, int move, int s
 //MESSAGE QUE
 void command_handler(char * queue_value, int type){
 
-        int command_count =  get_command_line(queue_value, type);  // command line parser
-
+        int command_count =  get_command_line(queue_value, type);  // command line / checks if its a a duplicate
         // ----- Standard Functions ----- //
         if (strcmp(command_line[0], "duplicate") == 0){
             //heap_caps_print_heap_info(MALLOC_CAP_DEFAULT);
             ESP_LOGI(TAG, "[DUPLICATE]");
             return;
-        }
+        } 
+
         if (strcmp(command_line[0], "ota") == 0){
             command_ota();
         }
@@ -1061,9 +1061,11 @@ void command_handler(char * queue_value, int type){
             command_move(1, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), device_stepper.min, device_stepper.max);
         }
         if (strcmp(command_line[0], "stepperNumTranslate") == 0){
-            int selectedCommand = device_stepper.number + 2;
-            command_move(1, atoi(command_line[selectedCommand]), atoi(command_line[1]), atoi(command_line[2]), device_stepper.min, device_stepper.max);
-            ESP_LOGI(TAG,"STEPPER NUMBER MOVE %d : %d", selectedCommand, atoi(command_line[selectedCommand]));
+            if (device_stepper.number!=0){
+                int selectedCommand = device_stepper.number + 2;
+                command_move(1, atoi(command_line[selectedCommand]), atoi(command_line[1]), atoi(command_line[2]), device_stepper.min, device_stepper.max);
+                ESP_LOGI(TAG,"STEPPER NUMBER MOVE %d : %d", selectedCommand, atoi(command_line[selectedCommand]));
+            }
         }
         if (strcmp(command_line[0], "stepperWave") == 0){//Move to location
             wave_command(atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), atoi(command_line[4]), atoi(command_line[5]), atoi(command_line[6]), atoi(command_line[7]), atoi(command_line[8]),device_stepper.min, device_stepper.max);       

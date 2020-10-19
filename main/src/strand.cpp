@@ -101,7 +101,7 @@ void command_move(int type, int move, int speed, int accel, int min, int max){
     test_action.min = min;
     test_action.max = max;
 
-    xQueueSendToBack(xQueue_stepper_command, (void *) &test_action, 10);           
+    xQueueSendToBack(xQueue_stepper_command, (void *) &test_action, 20);           
     ESP_LOGW(TAG, "STEPPER MOVING");
     // vTaskDelay(pdMS_TO_TICKS(500));
     // BaseType_t ret =  xTaskNotify(stepper_task_handle, STOP_BIT, eSetBits); 
@@ -178,8 +178,8 @@ void init_strand(int bootPosition) {
 
     switch(result) {
         case 0: ESP_LOGW(TAG,"SUCCESS");break;
-        case 1: ESP_LOGW(TAG,"loose connection"); server_ping("ERROR : Lose Connection");break;
-        case 2: ESP_LOGW(TAG,"no power"); server_ping("ERROR : No Power"); break;
+        case 1: ESP_LOGW(TAG,"loose connection"); server_ping("ERROR : Lose-Connection");break;
+        case 2: ESP_LOGW(TAG,"no power"); server_ping("ERROR : No-Power"); break;
         default: ESP_LOGW(TAG,"Default. result: %i", result); break;
     }
     ESP_LOGI(TAG,"Fix the problem and reset board.");
@@ -212,7 +212,7 @@ void stepper_task(void *args) {
     // esp_task_wdt_feed();
     ESP_LOGI(TAG, "Init Stepper Queue");
     // Setup the data structure to store and retrieve stepper commands
-    xQueue_stepper_command = xQueueCreate(50, sizeof(stepper_command_t));
+    xQueue_stepper_command = xQueueCreate(40, sizeof(stepper_command_t));
     if (xQueue_stepper_command == NULL) ESP_LOGE(TAG, "Unable to create stepper command queue");
 
     int stepper_move = 0; // storage for incoming stepper command
@@ -284,9 +284,31 @@ void stepper_task(void *args) {
                         // Check if we have received a notificaiton value to overrid the stepper task
                         //ESP_LOGI(TAG, "Stepper STOP");
                         //ESP_LOGW(TAG, "Notify receive", ulTaskNotifyTake(pdTRUE, 0););
+
+                        //Distance Shift Calculations 
+                        int pos = stepper.currentPosition();
+                        float to = stepper.distanceToGo() / factor;
+                        // ESP_LOGI(TAG, "Target %d", currentPosition);
+                        // ESP_LOGI(TAG, "Current Device %d", pos);
+                        // ESP_LOGI(TAG, "To Go %f", to);
+                        if (stepper_move <= 0 ){
+                            currentPosition = currentPosition + to;
+                        } else {
+                            currentPosition = currentPosition - to;
+                        }
+                        int t = currentPosition * factor;
+                        ESP_LOGI(TAG, "Updated Target %d - %d", t, pos);
+                    
                         stepper.stop();
-                        // stepper.setCurrentPosition(stepper.targetPosition());
-                        
+
+                        // to = stepper.distanceToGo() / factor;
+                        // ESP_LOGI(TAG, "To Go %f", to);
+                        // if (stepper_move <= 0 ){
+                        //     currentPosition = currentPosition + to;
+                        // } else {
+                        //     currentPosition = currentPosition - to;
+                        // }
+
                         notify = 0;
                         // break;
                     }
@@ -321,3 +343,4 @@ void stepper_task(void *args) {
     }
 
 }
+
