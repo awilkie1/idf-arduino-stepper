@@ -56,12 +56,15 @@ QueueHandle_t xQueue_tcp_respond;
 
 QueueHandle_t xQueue_wave_task;
 wave_t wave = {0};
+QueueHandle_t xQueue_sine_task;
+sine_t sine = {0};
+QueueHandle_t xQueue_sine_wave_task;
+sine_wave_t sine_wave = {0};
 
 tcp_task_action_t tcp_queue_value;
 
 location_t device_location;
 stepper_t device_stepper;
-
 
 //NVS
 
@@ -360,7 +363,7 @@ int get_command_line(char* a, int type){
         if (atoi(buff) == multicast_id){
                 ESP_LOGD(TAG, "[DUPLICATE] id %d", atoi(buff));
                 strncpy(token, "duplicate", 10);
-        }
+        } 
         multicast_id = atoi(buff);
     }
 
@@ -374,7 +377,6 @@ int get_command_line(char* a, int type){
    return i;
 
 }
-
 void send_udp(char* udp_message, char* ip_address, int port){
 
     char buffer[256];
@@ -393,7 +395,6 @@ void send_udp(char* udp_message, char* ip_address, int port){
     ESP_LOGI(TAG, "SENT MESSAGE %s : %s @ %d", udp_message, ip_address, port);
     
 }
-
 void broadcast_task(void *pvParameters)
 {
     char rx_buffer[COMMAND_ITEM_SIZE + 1];
@@ -483,7 +484,6 @@ void broadcast_task(void *pvParameters)
     }
    
 }
-
 static int socket_add_ipv4_multicast_group(int sock, bool assign_source_if)
 {
     struct ip_mreq imreq = { 0 };
@@ -525,7 +525,6 @@ static int socket_add_ipv4_multicast_group(int sock, bool assign_source_if)
  err:
     return err;
 }
-
 static int create_multicast_ipv4_socket()
 {
     struct sockaddr_in saddr = { 0 };
@@ -570,12 +569,11 @@ static int create_multicast_ipv4_socket()
         close(sock);
         return -1;
 }
-
 void multicast_task(void *pvParameters)
 {
     while (1) {
 
-        xQueue_multicast_task = xQueueCreate( 5, sizeof(char[COMMAND_ITEM_SIZE]));
+        xQueue_multicast_task = xQueueCreate( 25, sizeof(char[COMMAND_ITEM_SIZE]));
         if( xQueue_multicast_task == NULL )
         {
             ESP_LOGI(TAG, "unable to create multicast command queue");
@@ -649,7 +647,6 @@ void multicast_task(void *pvParameters)
         close(sock);
     }
 }
-
 void tcp_task_init(){
 
         struct sockaddr_in dest_addr;
@@ -678,7 +675,6 @@ void tcp_task_init(){
         }
     
 }
-
 void tcp_server_run(){
 
     ESP_LOGI(TAG, "Socket bound, port %d", PORT);
@@ -764,7 +760,6 @@ void tcp_server_run(){
         }
 
 }
-
 void tcp_task(void *pvParameters)
 {
     
@@ -796,11 +791,10 @@ void tcp_task(void *pvParameters)
     vTaskDelete(NULL);
 
 }
-
 void command_ota(void){
     saveParamters();
     //xTaskCreate(&ota_task, "ota_task", 16384, NULL, 3, NULL);
-    xTaskCreate(&simple_ota_example_task, "ota_example_task", 8192, NULL, 5, NULL);
+    xTaskCreate(&simple_ota_example_task, "ota_example_task", 4096, NULL, 5, NULL);
 }
 static esp_err_t command_reset(){
     saveParamters();
@@ -853,7 +847,6 @@ void updateUdp(){
     sprintf(respond, "%d %d %d %d %d", device_stepper.current, device_stepper.min, device_stepper.max,device_stepper.target,device_stepper.number);
     sendMessage(cmd, respond);
 }
-
 int deviceDistanceSpeed(int x, int y, int z, int s){
 
   int64_t x_Square = device_location.x - x;
@@ -862,7 +855,7 @@ int deviceDistanceSpeed(int x, int y, int z, int s){
 
   int64_t distance = (int64_t)abs(sqrtf(pow(x_Square, 2)  + pow(y_Square, 2) + pow(z_Square, 2)));
 
-  float speed = (float)(s / 10.0);
+  float speed = (float)(s / 100.0);
 
   ESP_LOGI(TAG, "Speed %f", speed);
 
@@ -875,7 +868,6 @@ int deviceDistanceSpeed(int x, int y, int z, int s){
 
   return distanceFromStart;
 }
-
 void wave_task(void *args) {
 
    xQueue_wave_task = xQueueCreate(10, sizeof(wave_t));
@@ -898,20 +890,12 @@ void wave_task(void *args) {
     }
     vTaskDelete(NULL); // clean up after ourselves
 }
-
 void wave_command(int x, int y, int z, int speed, int type, int move, int stepper_speed, int accel, int min, int max){
     wave_t wave_action;
     wave_action.x = x;
     wave_action.y = y;
     wave_action.z = z;
     wave_action.speed = speed;
-
-    // wave_action.stepper_type = type;
-    // wave_action.stepper_move = move;
-    // wave_action.stepper_speed = speed;
-    // wave_action.stepper_accel = accel;
-    // wave_action.stepper_min = min;
-    // wave_action.stepper_max = max;
 
     stepper_command_t stepper_action;
     stepper_action.move = move;
@@ -926,17 +910,134 @@ void wave_command(int x, int y, int z, int speed, int type, int move, int steppe
     xQueueSendToBack(xQueue_wave_task, (void *) &wave_action, 0);            
 
 }
+void sine_task(void *args) {
+
+   xQueue_sine_task = xQueueCreate(10, sizeof(sine_t));
+   if (xQueue_sine_task == NULL) ESP_LOGE(TAG, "Unable to create save command queue");
+   
+    while(1) {
+         if (xQueueReceive(xQueue_sine_task, &sine, portMAX_DELAY)) {
+            int top = sine.sine_stepper.move + sine.offset;
+            int bottom = sine.sine_stepper.move - sine.offset;
+            ESP_LOGI(TAG, "TYPE : %d MOVE : %d SPEED : %d ACCEL : %d MIN : %d MAX : %d", sine.sine_stepper.type, sine.sine_stepper.move, sine.sine_stepper.speed, sine.sine_stepper.accel,sine.sine_stepper.min, sine.sine_stepper.max);
+            
+            // //from bellow 
+            // if (sine.sine_stepper.move <= device_stepper.current){
+            //     for (int i = 0; i<sine.loops; i++) {
+            //         if (i%2 ==0){
+            //             command_move(sine.sine_stepper.type, bottom, sine.sine_stepper.speed, sine.sine_stepper.accel,sine.sine_stepper.min, sine.sine_stepper.max);
+            //         } else {
+            //             command_move(sine.sine_stepper.type, top, sine.sine_stepper.speed, sine.sine_stepper.accel,sine.sine_stepper.min, sine.sine_stepper.max);
+            //         }
+            //         vTaskDelay(pdMS_TO_TICKS(10));
+            //     }
+            // }
+            // //from above
+            // if (sine.sine_stepper.move > device_stepper.current){
+                
+            // }
+
+            for (int i = 0; i<sine.loops; i++) {
+                    if (i%2 ==0){
+                        command_move(sine.sine_stepper.type, top, sine.sine_stepper.speed, sine.sine_stepper.accel,sine.sine_stepper.min, sine.sine_stepper.max);
+                    } else {
+                        command_move(sine.sine_stepper.type, bottom, sine.sine_stepper.speed, sine.sine_stepper.accel,sine.sine_stepper.min, sine.sine_stepper.max);
+                    }
+                    vTaskDelay(pdMS_TO_TICKS(10));
+            }
+        
+            command_move(sine.sine_stepper.type, sine.sine_stepper.move, sine.sine_stepper.speed, sine.sine_stepper.accel,sine.sine_stepper.min, sine.sine_stepper.max);
+            vTaskDelay(pdMS_TO_TICKS(10));
+            // OVERWRITE
+            // This command sends a task notification with value '3' to the stepper task. Use that block of code to overwrite the stepper loop
+            //xTaskNotify(stepper_task_handle, 3, eSetValueWithOverwrite);
+         }
+    }
+    vTaskDelete(NULL); // clean up after ourselves
+}
+void sine_command(int type, int move, int stepper_speed, int accel, int min, int max, int loops, int offset){
+    sine_t sine_action;
+    sine_action.loops = loops;
+    sine_action.offset = offset;
+
+    stepper_command_t stepper_action;
+    stepper_action.move = move;
+    stepper_action.type = type;
+    stepper_action.speed = stepper_speed;
+    stepper_action.accel = accel;
+    stepper_action.min = min;
+    stepper_action.max = max;
+
+    sine_action.sine_stepper = stepper_action;
+
+    xQueueSendToBack(xQueue_sine_task, (void *) &sine_action, 0);            
+    ESP_LOGI(TAG, "Sine Task");
+}
+void sine_wave_task(void *args) {
+
+   xQueue_sine_wave_task = xQueueCreate(10, sizeof(sine_wave_t));
+   if (xQueue_sine_wave_task == NULL) ESP_LOGE(TAG, "Unable to create save command queue");
+   
+    while(1) {
+         if (xQueueReceive(xQueue_sine_wave_task, &sine_wave, portMAX_DELAY)) {
+            int top = sine_wave.sine_wave_stepper.move + sine_wave.offset;
+            int bottom = sine_wave.sine_wave_stepper.move - sine_wave.offset;
+            ESP_LOGI(TAG, "TYPE : %d MOVE : %d SPEED : %d ACCEL : %d MIN : %d MAX : %d", sine_wave.sine_wave_stepper.type, sine_wave.sine_wave_stepper.move, sine_wave.sine_wave_stepper.speed, sine_wave.sine_wave_stepper.accel,sine_wave.sine_wave_stepper.min, sine_wave.sine_wave_stepper.max);
+
+            ESP_LOGI(TAG, "X : %d Y : %d Z : %d SPEED : %d", sine_wave.x, sine_wave.y, sine_wave.z ,sine_wave.speed);
+            float delay = deviceDistanceSpeed(sine_wave.x, sine_wave.y, sine_wave.z ,sine_wave.speed);
+            ESP_LOGI(TAG, "DELAY : %f", delay);
+            vTaskDelay(pdMS_TO_TICKS(delay));
+            ESP_LOGI(TAG, "TYPE : %d MOVE : %d SPEED : %d ACCEL : %d MIN : %d MAX : %d", sine_wave.sine_wave_stepper.type, sine_wave.sine_wave_stepper.move, sine_wave.sine_wave_stepper.speed, sine_wave.sine_wave_stepper.accel,sine_wave.sine_wave_stepper.min, sine_wave.sine_wave_stepper.max);
+
+            for (int i = 0; i<sine_wave.loops; i++) {
+                    if (i%2 ==0){
+                        command_move(sine_wave.sine_wave_stepper.type, top, sine_wave.sine_wave_stepper.speed, sine_wave.sine_wave_stepper.accel,sine_wave.sine_wave_stepper.min, sine_wave.sine_wave_stepper.max);
+                    } else {
+                        command_move(sine_wave.sine_wave_stepper.type, bottom, sine_wave.sine_wave_stepper.speed, sine_wave.sine_wave_stepper.accel,sine_wave.sine_wave_stepper.min, sine_wave.sine_wave_stepper.max);
+                    }
+                    vTaskDelay(pdMS_TO_TICKS(10));
+            }
+        
+            command_move(sine_wave.sine_wave_stepper.type, sine_wave.sine_wave_stepper.move, sine_wave.sine_wave_stepper.speed, sine_wave.sine_wave_stepper.accel,sine_wave.sine_wave_stepper.min, sine_wave.sine_wave_stepper.max);
+            vTaskDelay(pdMS_TO_TICKS(10));
+       }
+    }
+    vTaskDelete(NULL); // clean up after ourselves
+}
+void sine_wave_command(int x, int y, int z, int speed, int type, int move, int stepper_speed, int accel, int min, int max, int loops, int offset){
+    sine_wave_t sine_wave_action;
+    sine_wave_action.loops = loops;
+    sine_wave_action.offset = offset;
+    sine_wave_action.x = x;
+    sine_wave_action.y = y;
+    sine_wave_action.z = z;
+    sine_wave_action.speed = speed;
+
+    stepper_command_t stepper_action;
+    stepper_action.move = move;
+    stepper_action.type = type;
+    stepper_action.speed = stepper_speed;
+    stepper_action.accel = accel;
+    stepper_action.min = min;
+    stepper_action.max = max;
+
+    sine_wave_action.sine_wave_stepper = stepper_action;
+
+    xQueueSendToBack(xQueue_sine_wave_task, (void *) &sine_wave_action, 0);            
+    ESP_LOGI(TAG, "sine_wave Task");
+}
 //MESSAGE QUE
 void command_handler(char * queue_value, int type){
 
-        int command_count =  get_command_line(queue_value, type);  // command line parser
-
+        int command_count =  get_command_line(queue_value, type);  // command line / checks if its a a duplicate
         // ----- Standard Functions ----- //
         if (strcmp(command_line[0], "duplicate") == 0){
             //heap_caps_print_heap_info(MALLOC_CAP_DEFAULT);
             ESP_LOGI(TAG, "[DUPLICATE]");
             return;
-        }
+        } 
+
         if (strcmp(command_line[0], "ota") == 0){
             command_ota();
         }
@@ -959,18 +1060,42 @@ void command_handler(char * queue_value, int type){
         if (strcmp(command_line[0], "stepperTranslate") == 0){//Move to location
             command_move(1, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), device_stepper.min, device_stepper.max);
         }
-        
         if (strcmp(command_line[0], "stepperNumTranslate") == 0){
-            int selectedCommand = device_stepper.number + 2;
-            command_move(1, atoi(command_line[selectedCommand]), atoi(command_line[1]), atoi(command_line[2]), device_stepper.min, device_stepper.max);
-            ESP_LOGI(TAG,"STEPPER NUMBER MOVE %d : %d", selectedCommand, atoi(command_line[selectedCommand]));
+            if (device_stepper.number!=0){
+                int selectedCommand = device_stepper.number + 2;
+                command_move(1, atoi(command_line[selectedCommand]), atoi(command_line[1]), atoi(command_line[2]), device_stepper.min, device_stepper.max);
+                ESP_LOGI(TAG,"STEPPER NUMBER MOVE %d : %d", selectedCommand, atoi(command_line[selectedCommand]));
+            }
         }
         if (strcmp(command_line[0], "stepperWave") == 0){//Move to location
             wave_command(atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), atoi(command_line[4]), atoi(command_line[5]), atoi(command_line[6]), atoi(command_line[7]), atoi(command_line[8]),device_stepper.min, device_stepper.max);       
         }
+        if (strcmp(command_line[0], "stepperSine") == 0){//Move to location
+            sine_command(1, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]),device_stepper.min, device_stepper.max, atoi(command_line[4]), atoi(command_line[5]));       
+        }
+        if (strcmp(command_line[0], "stepperNumSine") == 0){
+            int selectedCommand = device_stepper.number + 6;
+            sine_command(1, atoi(command_line[selectedCommand]), atoi(command_line[1]), atoi(command_line[2]),device_stepper.min, device_stepper.max, atoi(command_line[3]), atoi(command_line[4]));       
+            ESP_LOGI(TAG,"STEPPER NUMBER MOVE %d : %d", selectedCommand, atoi(command_line[selectedCommand]));
+        }
+
+        if (strcmp(command_line[0], "stepperSineWave") == 0){
+            //0 0 0 1 1 2000 2000 2000 5 100
+            sine_wave_command(atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), atoi(command_line[4]), 1, atoi(command_line[5]), atoi(command_line[6]), atoi(command_line[7]),device_stepper.min, device_stepper.max, atoi(command_line[8]), atoi(command_line[9]));       
+
+       }
+
+        
         //SETTING PARAMTERS UDP
+        if (strcmp(command_line[0], "setCurrent") == 0){
+            ESP_LOGI(TAG, "SET CURRENT");
+            setPramamter(1, atoi(command_line[1]));
+            saveParamters();
+            updateUdp();
+
+        }
         if (strcmp(command_line[0], "setMin") == 0){
-             ESP_LOGI(TAG, "SET MIN");
+            ESP_LOGI(TAG, "SET MIN");
             setPramamter(2, atoi(command_line[1]));
             saveParamters();
             updateUdp();
