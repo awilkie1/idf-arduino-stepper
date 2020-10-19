@@ -50,8 +50,6 @@ struct {
     int8_t hysteresis_end = 12;     // [-3..12]
 } config;
 
-bool home = false;
-
 struct Button {
   const uint8_t PIN;
   uint32_t numberKeyPresses;
