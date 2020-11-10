@@ -76,6 +76,7 @@ typedef struct stepper_command {
     int accel;
     int move;
     int type;
+    int time;
 } stepper_command_t;
 
 typedef struct {

@@ -20,7 +20,7 @@ extern TaskHandle_t stepper_task_handle;
 void init_strand(int bootPosition);
 void stepper_task(void *args);
 void sensor_task(void *args);
-void command_move(int move, int type, int speed, int accel, int min, int max); 
+void command_move(int move, int type, int speed, int accel, int time, int min, int max); 
 
 #ifdef __cplusplus
   }

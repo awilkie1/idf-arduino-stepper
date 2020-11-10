@@ -14,7 +14,7 @@ QueueHandle_t xQueue_stepper_command; // Must redefine here
 stepper_command_t stepper_commands;
 
 HardwareSerial SerialPort(2);
-#define STALL_VALUE     100 // [0..255]
+//#define STALL_VALUE     100 // [0..255]
 
 const int uart_buffer_size = (1024 * 2);
 #define RXD2             16  //UART
@@ -33,7 +33,7 @@ const int uart_buffer_size = (1024 * 2);
 // #define HOME_PIN         32 // HOME (Oliver)
 #define HOME_PIN         23 // HOME
 #define TCOOL_VALUE     150 // 150
-#define STALL_VALUE     135 // 150
+#define STALL_VALUE     105 // 150
 #define TPWMTHRS_THR    10 // 140
 
 //TMC2208Stepper driver(&SerialPort, R_SENSE); 
@@ -42,6 +42,8 @@ TMC2209Stepper driver(&SerialPort, R_SENSE , DRIVER_ADDRESS);
 AccelStepper stepper = AccelStepper(stepper.DRIVER, STEP_PIN, DIR_PIN);
 constexpr uint32_t steps_per_mm = 80;
 bool home = false;
+
+int currentPosition;
 
 struct {
     uint8_t blank_time = 16;        // [16, 24, 36, 54]
@@ -57,6 +59,9 @@ struct Button {
 };
 Button button1 = {HOME_PIN, 0, false};
 
+int solenoidPin = 22;  
+ 
+
 void IRAM_ATTR isr() {
     if (stepper_task_handle != NULL) {
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -67,15 +72,14 @@ void IRAM_ATTR isr() {
     }
 }
 
-int currentPosition;
 //float factor = 11.8; // wheel ratio steps per mm
 float factor = 22.6; // wheel ratio steps per mm
 
-void command_move(int type, int move, int speed, int accel, int min, int max){
+void command_move(int type, int move, int speed, int accel, int time, int min, int max){
     //xQueueSendToBack(xQueue_stepper_command, (void *) &move, 0);
     stepper_command_t test_action;
     //int stepper_target = 0;
-    if (type == 1){
+    if (type >= 1){
         if (move <= min) {
             ESP_LOGI(TAG, "MIN");
             test_action.move = min;
@@ -98,6 +102,7 @@ void command_move(int type, int move, int speed, int accel, int min, int max){
 
     test_action.speed = speed;
     test_action.accel = accel;
+    test_action.time = time;
     test_action.min = min;
     test_action.max = max;
 
@@ -128,6 +133,8 @@ void init_strand(int bootPosition) {
    pinMode(STEP_PIN, OUTPUT);
    pinMode(DIR_PIN, OUTPUT);
    digitalWrite(EN_PIN, LOW);      // Enable driver in hardware
+
+   pinMode(solenoidPin, OUTPUT); //enable solinoid
    
    // Driver Setup
    SerialPort.begin(115200);
@@ -231,9 +238,31 @@ void stepper_task(void *args) {
             //if type 0 DONT record the position (relative)
             //ESP_LOGI(TAG, "Stepper Type %d", stepper_commands.type);
             
-            stepper.setMaxSpeed(stepper_commands.speed); // 100mm/s @ 80 steps/mm
-            stepper.setAcceleration(stepper_commands.accel); // 100mm/s @ 80 steps/mm
+            float speed = 1.0;
+            
+            if (stepper_commands.type == 2){
+                
+                stepper_move = (stepper_commands.move - currentPosition) * factor;//works out based on mm
+                speed =  abs(stepper_move /float(stepper_commands.time));
+                float stepperSpeed = float(stepper_commands.speed) * speed;
 
+                ESP_LOGI(TAG, "Stepper Move To : %d Dif %d : Current : %d",stepper_commands.move, stepper_move, currentPosition);
+                ESP_LOGI(TAG, "Stepper Speed %f - %d : %f",speed, stepper_commands.time, stepperSpeed);
+
+                currentPosition = stepper_commands.move;
+                stepper.setAcceleration(stepper_commands.accel); // 100mm/s @ 80 steps/mm
+                //Speed
+                if (stepper_commands.speed <10000 && stepperSpeed >= 100){
+                    stepper.setMaxSpeed(int(stepperSpeed)); // 100mm/s @ 80 steps/mm
+                    //stepper.setAcceleration(int(stepper_commands.accel*speed)); // 100mm/s @ 80 steps/mm
+                } else if (stepperSpeed<100){
+                    stepper.setMaxSpeed(100); // 100mm/s @ 80 steps/mm
+                    //stepper.setAcceleration(100); // 100mm/s @ 80 steps/mm
+                } else {
+                    stepper.setMaxSpeed(10000); // 100mm/s @ 80 steps/mm
+                    //stepper.setAcceleration(10000); // 100mm/s @ 80 steps/mm
+                }
+            }
             if (stepper_commands.type == 1){
 
                 stepper_move = (stepper_commands.move - currentPosition) * factor;//works out based on mm
@@ -242,16 +271,23 @@ void stepper_task(void *args) {
 
                 currentPosition = stepper_commands.move;
                 //save out and back to main = currentPosition;
+                stepper.setMaxSpeed(stepper_commands.speed); // 100mm/s @ 80 steps/mm
+                stepper.setAcceleration(stepper_commands.accel); // 100mm/s @ 80 steps/mm
             }
             if (stepper_commands.type == 0){
                 stepper_move = stepper_commands.move;
                 ESP_LOGI(TAG, "Stepper Move %d : %d", stepper_move, currentPosition);
+                stepper.setMaxSpeed(stepper_commands.speed); // 100mm/s @ 80 steps/mm
+                stepper.setAcceleration(stepper_commands.accel); // 100mm/s @ 80 steps/mm
             }
+
+            digitalWrite(solenoidPin, HIGH);      //Switch Solenoid ON
 
             //if type 1 record the position 
             //Print
             ESP_LOGI(TAG, "Stepper Move %d", stepper_move);
             // Set distance to move from comand variable
+            
             stepper.move(stepper_move);
             // Run the stepper loop until we get to our destination
             while(stepper.distanceToGo() != 0) {
@@ -334,9 +370,12 @@ void stepper_task(void *args) {
                 // vTaskDelay(1);
             }
 
-            if (stepper_commands.type == 1){//saving position once moved 
+            if (stepper_commands.type >= 1){//saving position once moved 
                 setPramamter(1, currentPosition);
             }
+            
+            digitalWrite(solenoidPin, LOW);       //Switch Solenoid OFF
+
             
         }
         

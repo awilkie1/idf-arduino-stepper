@@ -880,7 +880,7 @@ void wave_task(void *args) {
             ESP_LOGI(TAG, "DELAY : %f", delay);
             vTaskDelay(pdMS_TO_TICKS(delay));
             ESP_LOGI(TAG, "TYPE : %d MOVE : %d SPEED : %d ACCEL : %d MIN : %d MAX : %d", wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
-            command_move(wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel,wave.wave_stepper.min, wave.wave_stepper.max);
+            command_move(wave.wave_stepper.type, wave.wave_stepper.move, wave.wave_stepper.speed, wave.wave_stepper.accel, 0, wave.wave_stepper.min, wave.wave_stepper.max);
             vTaskDelay(pdMS_TO_TICKS(10));
 
             // OVERWRITE
@@ -939,14 +939,14 @@ void sine_task(void *args) {
 
             for (int i = 0; i<sine.loops; i++) {
                     if (i%2 ==0){
-                        command_move(sine.sine_stepper.type, top, sine.sine_stepper.speed, sine.sine_stepper.accel,sine.sine_stepper.min, sine.sine_stepper.max);
-                    } else {
-                        command_move(sine.sine_stepper.type, bottom, sine.sine_stepper.speed, sine.sine_stepper.accel,sine.sine_stepper.min, sine.sine_stepper.max);
+                        command_move(sine.sine_stepper.type, top, sine.sine_stepper.speed, sine.sine_stepper.accel, 0, sine.sine_stepper.min, sine.sine_stepper.max);
+                    } else { 
+                        command_move(sine.sine_stepper.type, bottom, sine.sine_stepper.speed, sine.sine_stepper.accel, 0, sine.sine_stepper.min, sine.sine_stepper.max);
                     }
                     vTaskDelay(pdMS_TO_TICKS(10));
             }
         
-            command_move(sine.sine_stepper.type, sine.sine_stepper.move, sine.sine_stepper.speed, sine.sine_stepper.accel,sine.sine_stepper.min, sine.sine_stepper.max);
+            command_move(sine.sine_stepper.type, sine.sine_stepper.move, sine.sine_stepper.speed, sine.sine_stepper.accel, 0, sine.sine_stepper.min, sine.sine_stepper.max);
             vTaskDelay(pdMS_TO_TICKS(10));
             // OVERWRITE
             // This command sends a task notification with value '3' to the stepper task. Use that block of code to overwrite the stepper loop
@@ -992,14 +992,14 @@ void sine_wave_task(void *args) {
 
             for (int i = 0; i<sine_wave.loops; i++) {
                     if (i%2 ==0){
-                        command_move(sine_wave.sine_wave_stepper.type, top, sine_wave.sine_wave_stepper.speed, sine_wave.sine_wave_stepper.accel,sine_wave.sine_wave_stepper.min, sine_wave.sine_wave_stepper.max);
+                        command_move(sine_wave.sine_wave_stepper.type, top, sine_wave.sine_wave_stepper.speed, sine_wave.sine_wave_stepper.accel, 0,sine_wave.sine_wave_stepper.min, sine_wave.sine_wave_stepper.max);
                     } else {
-                        command_move(sine_wave.sine_wave_stepper.type, bottom, sine_wave.sine_wave_stepper.speed, sine_wave.sine_wave_stepper.accel,sine_wave.sine_wave_stepper.min, sine_wave.sine_wave_stepper.max);
+                        command_move(sine_wave.sine_wave_stepper.type, bottom, sine_wave.sine_wave_stepper.speed, sine_wave.sine_wave_stepper.accel,0 ,sine_wave.sine_wave_stepper.min, sine_wave.sine_wave_stepper.max);
                     }
                     vTaskDelay(pdMS_TO_TICKS(10));
             }
         
-            command_move(sine_wave.sine_wave_stepper.type, sine_wave.sine_wave_stepper.move, sine_wave.sine_wave_stepper.speed, sine_wave.sine_wave_stepper.accel,sine_wave.sine_wave_stepper.min, sine_wave.sine_wave_stepper.max);
+            command_move(sine_wave.sine_wave_stepper.type, sine_wave.sine_wave_stepper.move, sine_wave.sine_wave_stepper.speed, sine_wave.sine_wave_stepper.accel, 0, sine_wave.sine_wave_stepper.min, sine_wave.sine_wave_stepper.max);
             vTaskDelay(pdMS_TO_TICKS(10));
        }
     }
@@ -1052,20 +1052,36 @@ void command_handler(char * queue_value, int type){
         }
         //MOVEMENT TYPES/BEHAVIOURS
         if (strcmp(command_line[0], "home") == 0){//Relative Move
-            command_move(0, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]),device_stepper.min, device_stepper.max);
+            command_move(0, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), 0, device_stepper.min, device_stepper.max);
         }
         if (strcmp(command_line[0], "stepperMove") == 0){//Relative Move
-            command_move(0, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]),device_stepper.min, device_stepper.max);
+            command_move(0, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), 0,device_stepper.min, device_stepper.max);
         }
         if (strcmp(command_line[0], "stepperTranslate") == 0){//Move to location
-            command_move(1, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), device_stepper.min, device_stepper.max);
+            command_move(1, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), 0, device_stepper.min, device_stepper.max);
         }
         if (strcmp(command_line[0], "stepperNumTranslate") == 0){
             if (device_stepper.number!=0){
                 int selectedCommand = device_stepper.number + 2;
-                command_move(1, atoi(command_line[selectedCommand]), atoi(command_line[1]), atoi(command_line[2]), device_stepper.min, device_stepper.max);
+                command_move(1, atoi(command_line[selectedCommand]), atoi(command_line[1]), atoi(command_line[2]), 0, device_stepper.min, device_stepper.max);
                 ESP_LOGI(TAG,"STEPPER NUMBER MOVE %d : %d", selectedCommand, atoi(command_line[selectedCommand]));
             }
+        }
+
+        if (strcmp(command_line[0], "strandTranslate") == 0){
+            // if (device_stepper.number!=0){
+            //     int selectedCommand = device_stepper.number + 2;
+            //     // int selectedStrand = 0; 
+            //     // if (selectedCommand % 2 == 0){
+            //     //     selectedStrand
+            //     // }
+            //     command_move(1, atoi(command_line[selectedCommand]), atoi(command_line[1]), atoi(command_line[2]), device_stepper.min, device_stepper.max);
+            //     ESP_LOGI(TAG,"STEPPER NUMBER MOVE %d : %d", selectedCommand, atoi(command_line[selectedCommand]));
+            // }
+
+            //float speedA =  (atoi(command_line[1]) - currentPosition) / atoi(command_line[4]);
+
+            command_move(2, atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), atoi(command_line[4]), device_stepper.min, device_stepper.max);
         }
         if (strcmp(command_line[0], "stepperWave") == 0){//Move to location
             wave_command(atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), atoi(command_line[4]), atoi(command_line[5]), atoi(command_line[6]), atoi(command_line[7]), atoi(command_line[8]),device_stepper.min, device_stepper.max);       
