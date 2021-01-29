@@ -3,6 +3,7 @@
 #include "Strand.hpp"
 #include <HardwareSerial.h>
 #include <TMCStepper.h>
+// #include "AccelStepper.h"
 #include <AccelStepper.h>
 #include "net.h"
 #include <driver/adc.h>
@@ -20,8 +21,8 @@ const int uart_buffer_size = (1024 * 2);
 #define RXD2             16  //UART
 #define TXD2             17  //UART
 #define EN_PIN           5   // Enable
-#define DIR_PIN          19  // Direction
-#define STEP_PIN         18  // Step
+#define DIR_PIN          18  // Direction
+#define STEP_PIN         19  // Step
 // #define DIR_PIN          14  // Direction
 // #define STEP_PIN         12  // Step
 // #define DIR_PIN          19 // Direction (Oliver)
@@ -186,6 +187,8 @@ void init_strand(int bootPosition) {
 //    attachInterrupt(digitalPinToInterrupt(button1.PIN), isr, FALLING);
    pinMode(button1.PIN, INPUT_PULLDOWN);
    attachInterrupt(digitalPinToInterrupt(button1.PIN), isr, RISING);
+
+   driver.VACTUAL(6400);
 }
 
 void stepper_task(void *args) {
@@ -300,7 +303,6 @@ void stepper_task(void *args) {
                     //     break;
                     // }
                 // }
-
                 stepper.run();
                 // if((ms-last_time) > 100) { //run every 0.1s
                 //     last_time = ms;

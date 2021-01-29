@@ -32,8 +32,10 @@
 
 // WIFI Network Connection
 // #define _WIFI_SSID "_bloom_strand"
-#define _WIFI_SSID "_bloom_mesh" // Ollie's test env
+#define _WIFI_SSID "_bloom" // Ollie's test env
 #define _WIFI_PASS "sqU1d0ak"
+// #define _WIFI_SSID "_squidsoup" // Ollie's test env
+// #define _WIFI_PASS "squiddie"
 
 #define SERVER_IP_ADDRESS "10.0.2.10"
 #define SERVER_PORT 9999
