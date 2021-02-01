@@ -207,29 +207,30 @@ extern "C" void app_main() {
    // Initialize fade service.
    ledc_fade_func_install(0);
 
-   while(1) {
-      // printf("Fade up\n");
-      // ledc_set_fade_with_time(ledc_channel.speed_mode,
-      //          ledc_channel.channel, LEDC_TEST_DUTY, LEDC_TEST_FADE_TIME);
-      // ledc_fade_start(ledc_channel.speed_mode,
-      //          ledc_channel.channel, LEDC_FADE_NO_WAIT);
+   // while(1) {
+   //    // printf("Fade up\n");
+   //    // ledc_set_fade_with_time(ledc_channel.speed_mode,
+   //    //          ledc_channel.channel, LEDC_TEST_DUTY, LEDC_TEST_FADE_TIME);
+   //    // ledc_fade_start(ledc_channel.speed_mode,
+   //    //          ledc_channel.channel, LEDC_FADE_NO_WAIT);
 
-      // vTaskDelay(LEDC_TEST_FADE_TIME / portTICK_PERIOD_MS);
+   //    // vTaskDelay(LEDC_TEST_FADE_TIME / portTICK_PERIOD_MS);
 
-      // printf("Fade down\n");
-      // ledc_set_fade_with_time(ledc_channel.speed_mode,
-      //          ledc_channel.channel, 850, LEDC_TEST_FADE_TIME);
-      // ledc_fade_start(ledc_channel.speed_mode,
-      //          ledc_channel.channel, LEDC_FADE_NO_WAIT);
+   //    // printf("Fade down\n");
+   //    // ledc_set_fade_with_time(ledc_channel.speed_mode,
+   //    //          ledc_channel.channel, 850, LEDC_TEST_FADE_TIME);
+   //    // ledc_fade_start(ledc_channel.speed_mode,
+   //    //          ledc_channel.channel, LEDC_FADE_NO_WAIT);
       
-      printf("PWM On\n");
-      ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, 800);
-      ledc_update_duty(ledc_channel.speed_mode, ledc_channel.channel);
+   //    printf("PWM On\n");
+   //    ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, 800);
+   //    ledc_update_duty(ledc_channel.speed_mode, ledc_channel.channel);
 
-      vTaskDelay(LEDC_TEST_FADE_TIME / portTICK_PERIOD_MS);
-   }
+   //    vTaskDelay(LEDC_TEST_FADE_TIME / portTICK_PERIOD_MS);
+   // }
 
-
+   ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, 800);
+   ledc_update_duty(ledc_channel.speed_mode, ledc_channel.channel);
    // while(1) {
    //    printf("Turning off Pin\n");
    //    gpio_set_level(sol_pin_out, 0);
