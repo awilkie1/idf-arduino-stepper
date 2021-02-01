@@ -32,7 +32,7 @@ const int uart_buffer_size = (1024 * 2);
 #define MICROSTEPPING         8// MICROSTEPPING 8
 //homiing buttion stuff
 // #define HOME_PIN         32 // HOME (Oliver)
-#define HOME_PIN         23 // HOME
+#define HOME_PIN         21 // HOME
 #define TCOOL_VALUE     150 // 150
 #define STALL_VALUE     140 // 150
 #define TPWMTHRS_THR    10 // 140
@@ -188,7 +188,7 @@ void init_strand(int bootPosition) {
    pinMode(button1.PIN, INPUT_PULLDOWN);
    attachInterrupt(digitalPinToInterrupt(button1.PIN), isr, RISING);
 
-   driver.VACTUAL(6400);
+//    driver.VACTUAL(6400);
 }
 
 void stepper_task(void *args) {

@@ -229,7 +229,7 @@ extern "C" void app_main() {
    //    vTaskDelay(LEDC_TEST_FADE_TIME / portTICK_PERIOD_MS);
    // }
 
-   ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, 800);
+   ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, 500);
    ledc_update_duty(ledc_channel.speed_mode, ledc_channel.channel);
    // while(1) {
    //    printf("Turning off Pin\n");
