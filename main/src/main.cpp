@@ -37,12 +37,38 @@
 #include "netdb.h"
 #include "driver/uart.h"
 
+// Solenoid includes
+#include "driver/gpio.h"
+#include <driver/dac.h>
+#include "driver/ledc.h"
+
 extern "C" {
     // Any libraries written in  C++ should be included here
    //  #include "Stepper.h"
 }
 #include "net.h"
 #include "strand.hpp"
+
+#define LEDC_HS_TIMER          LEDC_TIMER_0
+#define LEDC_HS_MODE           LEDC_HIGH_SPEED_MODE
+#define LEDC_HS_CH0_GPIO       (25)
+#define LEDC_HS_CH0_CHANNEL    LEDC_CHANNEL_0
+#define LEDC_HS_CH1_GPIO       (19)
+#define LEDC_HS_CH1_CHANNEL    LEDC_CHANNEL_1
+
+#define LEDC_LS_TIMER          LEDC_TIMER_1
+#define LEDC_LS_MODE           LEDC_LOW_SPEED_MODE
+#define LEDC_LS_CH2_GPIO       (25)
+#define LEDC_LS_CH2_CHANNEL    LEDC_CHANNEL_2
+#define LEDC_LS_CH3_GPIO       (5)
+#define LEDC_LS_CH3_CHANNEL    LEDC_CHANNEL_3
+
+#define LEDC_TEST_CH_NUM       (4)
+#define LEDC_TEST_DUTY         (1023)
+#define LEDC_TEST_FADE_TIME    (2000)
+
+#define SOL_PIN 25
+const gpio_num_t sol_pin_out = (gpio_num_t) SOL_PIN;
 
 static const char *TAG = "STARTUP";
 
@@ -134,12 +160,88 @@ extern "C" void app_main() {
    xQueueAddToSet(xQueue_broadcast_task, queue_set);
    xQueueAddToSet(xQueue_tcp_task, queue_set);
 
+   // -------- PCB TESTING --------
+
    // for (int i=0; i<2; i++){
-   //    command_move(0, 10000, 800, 3000, 0, 10000);
-   //    command_move(0, -10000, 800, 3000, 0, 10000);
+   //    command_move(0, 10000, 3200, 3000, 0, 10000);
+   //    command_move(0, -10000, 3200, 3000, 0, 10000);
    //    // vTaskDelay(pdMS_TO_TICKS(1000));
    // }
    // command_move(0, 40000, 3000, 3000, 0, 10000);
+   // gpio_pad_select_gpio(sol_pin_out);
+   // gpio_set_direction(sol_pin_out, GPIO_MODE_OUTPUT);
+   // dac_output_enable(DAC_CHANNEL_1);
+   // while(1) {
+   //    printf("start ADC \n");
+   //    for (int i=255; i>0; i--) {
+   //       printf("ADC value: %i \n", i);
+   //       dac_output_voltage(DAC_CHANNEL_1, i);
+   //       printf("wait\n");
+   //       vTaskDelay(pdMS_TO_TICKS(100));
+   //    }
+   // }
+
+   /*
+   * Prepare and set configuration of timers
+   * that will be used by LED Controller
+   */
+   ledc_timer_config_t ledc_timer;
+      ledc_timer.duty_resolution = LEDC_TIMER_10_BIT; // resolution of PWM duty
+      ledc_timer.freq_hz = 18000;                      // frequency of PWM signal 18000
+      ledc_timer.speed_mode = LEDC_HS_MODE;           // timer mode
+      ledc_timer.timer_num = LEDC_HS_TIMER;            // timer index
+
+   // Set configuration of timer0 for high speed channels
+   ledc_timer_config(&ledc_timer);
+   ledc_channel_config_t ledc_channel = {0};
+   ledc_channel.channel    = LEDC_HS_CH0_CHANNEL;
+   ledc_channel.duty       = 0;
+   ledc_channel.gpio_num   = LEDC_HS_CH0_GPIO;
+   ledc_channel.speed_mode = LEDC_HS_MODE;
+   ledc_channel.hpoint     = 0;
+   ledc_channel.timer_sel  = LEDC_HS_TIMER;
+
+   // Set LED Controller with previously prepared configuration
+   ledc_channel_config(&ledc_channel);
+
+   // Initialize fade service.
+   ledc_fade_func_install(0);
+
+   while(1) {
+      // printf("Fade up\n");
+      // ledc_set_fade_with_time(ledc_channel.speed_mode,
+      //          ledc_channel.channel, LEDC_TEST_DUTY, LEDC_TEST_FADE_TIME);
+      // ledc_fade_start(ledc_channel.speed_mode,
+      //          ledc_channel.channel, LEDC_FADE_NO_WAIT);
+
+      // vTaskDelay(LEDC_TEST_FADE_TIME / portTICK_PERIOD_MS);
+
+      // printf("Fade down\n");
+      // ledc_set_fade_with_time(ledc_channel.speed_mode,
+      //          ledc_channel.channel, 850, LEDC_TEST_FADE_TIME);
+      // ledc_fade_start(ledc_channel.speed_mode,
+      //          ledc_channel.channel, LEDC_FADE_NO_WAIT);
+      
+      printf("PWM On\n");
+      ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, 800);
+      ledc_update_duty(ledc_channel.speed_mode, ledc_channel.channel);
+
+      vTaskDelay(LEDC_TEST_FADE_TIME / portTICK_PERIOD_MS);
+   }
+
+
+   // while(1) {
+   //    printf("Turning off Pin\n");
+   //    gpio_set_level(sol_pin_out, 0);
+   //    vTaskDelay(pdMS_TO_TICKS(1000));
+
+   //    printf("Turning on Pin\n");
+   //    gpio_set_level(sol_pin_out, 1);
+   //    vTaskDelay(pdMS_TO_TICKS(1000));
+   // }
+
+
+
 
 
    // Block the task until we receive a value from any of the queues
