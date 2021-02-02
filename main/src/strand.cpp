@@ -188,7 +188,7 @@ void init_strand(int bootPosition) {
    pinMode(button1.PIN, INPUT_PULLDOWN);
    attachInterrupt(digitalPinToInterrupt(button1.PIN), isr, RISING);
 
-//    driver.VACTUAL(6400);
+   //driver.VACTUAL(6400);
 }
 
 void stepper_task(void *args) {

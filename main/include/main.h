@@ -32,7 +32,7 @@
 
 // WIFI Network Connection
 // #define _WIFI_SSID "_bloom_strand"
-#define _WIFI_SSID "_bloom" // Ollie's test env
+#define _WIFI_SSID "_bloom_strand" // Ollie's test env
 #define _WIFI_PASS "sqU1d0ak"
 // #define _WIFI_SSID "_squidsoup" // Ollie's test env
 // #define _WIFI_PASS "squiddie"
