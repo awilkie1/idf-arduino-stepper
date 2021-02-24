@@ -539,10 +539,15 @@ protected:
     /// Symbolic names for the direction the motor is turning
     typedef enum
     {
-	DIRECTION_CCW = 0,  ///< Counter-Clockwise
-        DIRECTION_CW  = 1   ///< Clockwise
+	// DIRECTION_CCW = 0,  ///< Counter-Clockwise
+    //     DIRECTION_CW  = 1   ///< Clockwise
+    // } Direction;
+    
+    //filpped 
+    DIRECTION_CCW = 1,  ///< Counter-Clockwise
+        DIRECTION_CW  = 0   ///< Clockwise
     } Direction;
-
+    
     /// Forces the library to compute a new instantaneous speed and set that as
     /// the current speed. It is called by
     /// the library:
