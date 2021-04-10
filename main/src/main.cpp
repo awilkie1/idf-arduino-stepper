@@ -160,7 +160,7 @@ extern "C" void app_main() {
    xQueueAddToSet(xQueue_broadcast_task, queue_set);
    xQueueAddToSet(xQueue_tcp_task, queue_set);
 
-   command_move(0, -100, 3000, 3000, 0, 100);   
+   command_move(0, -20, 3000, 3000, 0, 100);   
 
    // -------- PCB TESTING --------
 
@@ -231,7 +231,7 @@ extern "C" void app_main() {
    //    vTaskDelay(LEDC_TEST_FADE_TIME / portTICK_PERIOD_MS);
    // }
 
-   ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, 900);
+   ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, 950);
    ledc_update_duty(ledc_channel.speed_mode, ledc_channel.channel);
    
    vTaskDelay(LEDC_TEST_FADE_TIME / portTICK_PERIOD_MS);

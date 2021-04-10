@@ -969,6 +969,14 @@ void command_handler(char * queue_value, int type){
             wave_command(atoi(command_line[1]), atoi(command_line[2]), atoi(command_line[3]), atoi(command_line[4]), atoi(command_line[5]), atoi(command_line[6]), atoi(command_line[7]), atoi(command_line[8]),device_stepper.min, device_stepper.max);       
         }
         //SETTING PARAMTERS UDP
+
+        if (strcmp(command_line[0], "setCurrent") == 0){
+            ESP_LOGI(TAG, "SET CURRENT");
+            setPramamter(1, atoi(command_line[1]));
+            saveParamters();
+            updateUdp();
+
+        }
         if (strcmp(command_line[0], "setMin") == 0){
              ESP_LOGI(TAG, "SET MIN");
             setPramamter(2, atoi(command_line[1]));
