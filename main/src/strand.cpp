@@ -15,7 +15,7 @@ QueueHandle_t xQueue_stepper_command; // Must redefine here
 stepper_command_t stepper_commands;
 
 HardwareSerial SerialPort(2);
-#define STALL_VALUE     100 // [0..255]
+// #define STALL_VALUE     100 // [0..255]
 
 const int uart_buffer_size = (1024 * 2);
 #define RXD2             16  //UART
@@ -28,14 +28,23 @@ const int uart_buffer_size = (1024 * 2);
 // #define DIR_PIN          19 // Direction (Oliver)
 // #define STEP_PIN         14 // Step  (Oliver)
 #define R_SENSE 0.11f
+// #define R_SENSE 0.27f
+// #define R_SENSE 0.08f
 #define DRIVER_ADDRESS  0b00       // TMC2209 Driver address according to MS1 and MS2
-#define MICROSTEPPING         8// MICROSTEPPING 8
+#define MICROSTEPPING         00000// MICROSTEPPING 8
+// #define MICROSTEPPING         2// MICROSTEPPING 8
 //homiing buttion stuff
 // #define HOME_PIN         32 // HOME (Oliver)
+
+// StallGuard
+#define STALL_VALUE     5 // 150
 #define HOME_PIN         21 // HOME
-#define TCOOL_VALUE     150 // 150
-#define STALL_VALUE     140 // 150
-#define TPWMTHRS_THR    10 // 140
+
+// CoolStep 
+#define TCOOL_VALUE    42 // 150 > TPWMTHRS_THR
+
+// StealthChop
+#define TPWMTHRS_THR    42 // 140 Threshold where stealthchop switches to spreadcycle
 
 //TMC2208Stepper driver(&SerialPort, R_SENSE); 
 TMC2209Stepper driver(&SerialPort, R_SENSE , DRIVER_ADDRESS);
@@ -44,11 +53,18 @@ AccelStepper stepper = AccelStepper(stepper.DRIVER, STEP_PIN, DIR_PIN);
 constexpr uint32_t steps_per_mm = 80;
 bool home = false;
 
+// struct {
+//     uint8_t blank_time = 0;        // [16, 24, 36, 54]
+//     uint8_t off_time = 5;           // [1..15]
+//     uint8_t hysteresis_start = 7;   // [1..8]
+//     uint8_t hysteresis_end = 15;     // [0..15] 15 very smooth
+// } config;
+
 struct {
-    uint8_t blank_time = 16;        // [16, 24, 36, 54]
-    uint8_t off_time = 1;           // [1..15]
-    uint8_t hysteresis_start = 8;   // [1..8]
-    int8_t hysteresis_end = 12;     // [-3..12]
+    uint8_t blank_time = 0;        // [16, 24, 36, 54]
+    uint8_t off_time = 2;           // [1..15]
+    uint8_t hysteresis_start = 0;   // [1..8]
+    uint8_t hysteresis_end = 0;     // [0..15] 15 very smooth
 } config;
 
 struct Button {
@@ -117,27 +133,49 @@ void init_strand(int bootPosition) {
    driver.pdn_disable(true);               // Use PDN/UART pin for communication
    driver.I_scale_analog(false);           // Use internal voltage reference
    driver.mstep_reg_select(1);             // necessary for TMC2208 to set microstep register with UART
-   driver.toff(3);                         // Enables driver in software
-   driver.rms_current(1200);               // Set motor RMS current
+   driver.toff(2);                         // Enables driver in software
+   driver.rms_current(1700);               // Set motor RMS current
    driver.microsteps(MICROSTEPPING);       // Set microsteps to 1/16th
    driver.en_spreadCycle(false);           // Toggle spr
    driver.VACTUAL(0);                      // make sure velocity is set to 0
+
+   // Stealthchop
+   driver.pwm_freq(0); // 2 1
    driver.pwm_autoscale(true);             // Needed for stealthChop
+//    driver.pwm_grad(0);
+   driver.pwm_ofs(0);
+   driver.pwm_autograd(true);
+   driver.TPOWERDOWN(4);                   // Minimum of 2 is required for auto tuning of stealth chop
+
+   driver.pwm_lim(10); //8                      // Limit for PWM_SCALE_AUTO when switching back from SpreadCycle to StealthChop. keep above 5
+   driver.pwm_reg(8); // 8
+
+   driver.multistep_filt(false);
 //    driver.SGTHRS(STALL_VALUE);
+
+    // Spreadcylce
+    driver.blank_time(config.blank_time);
+    // driver.toff(config.off_time);
+    driver.hysteresis_start(config.hysteresis_start);
+    driver.hysteresis_end(config.hysteresis_end);
 
     //STALLGUARDING was miking some funny sounds 
     // driver.TCOOLTHRS(0xFFFFF); // 20bit max
-    //driver.THIGH(0);
+    // driver.THIGH(0);
     // driver.TCOOLTHRS(0xFFFFF); // 20bit max
+    
     driver.TCOOLTHRS(TCOOL_VALUE); // 20bit max
-    driver.semin(1);
-    driver.semax(5);
-    driver.sedn(0b01);
+    // driver.semin(1);
+    // driver.semax(5);
+    // driver.sedn(0b01);
     driver.SGTHRS(STALL_VALUE);
 
    // Stepper Library Setup
-   stepper.setMaxSpeed(1400*MICROSTEPPING); // 100mm/s @ 80 steps/mm
-   stepper.setAcceleration(1000*MICROSTEPPING); // 2000mm/s^2
+
+   // Disable this when mirostepping is disabled
+//    stepper.setMaxSpeed(1400*MICROSTEPPING); // 100mm/s @ 80 steps/mm
+//    stepper.setAcceleration(1000*MICROSTEPPING); // 2000mm/s^2
+
    stepper.setEnablePin(EN_PIN);
    stepper.setPinsInverted(false, false, true);
    stepper.enableOutputs();
@@ -251,7 +289,7 @@ void stepper_task(void *args) {
             // Run the stepper loop until we get to our destination
             while(stepper.distanceToGo() != 0) {
                 static uint32_t last_time=0;
-                uint32_t ms = millis();
+                // uint32_t ms = millis();
                 // if (ulTaskNotifyTake(pdTRUE, 0) > 1) {
                 //     ESP_LOGW(TAG, "Notify receive");
                 // }
@@ -267,9 +305,9 @@ void stepper_task(void *args) {
                     if (notify & HOME_BIT) {
                         // if (home==true) {//Alowing to be wound out
                             driver.toff(0); // turn off compeletely (for safety)
-                            driver.toff(4); // and back on again
+                            driver.toff(2); // and back on again
                             stepper.setCurrentPosition(0);
-                            stepper.runToNewPosition(600);
+                            stepper.runToNewPosition(-600);
                             home=false;
                             // setPramamter(1, 0);
                             currentPosition = 0;
@@ -297,17 +335,18 @@ void stepper_task(void *args) {
                 // while (Serial.available() > 0) {
                 //     int8_t read_byte = Serial.read();
 
-                    // if (driver.SG_RESULT() < 200) {
-                    //     driver.toff(0);
-                    //     Serial.println("Motor stop");
-                    //     break;
-                    // }
+                //     if (driver.SG_RESULT() < 200) {
+                //         driver.toff(0);
+                //         Serial.println("Motor stop");
+                //         break;
+                //     }
                 // }
                 stepper.run();
-                // if((ms-last_time) > 100) { //run every 0.1s
+                // if((ms-last_time) > 500) { //run every 0.1s
                 //     last_time = ms;
-
-                //     ESP_LOGI(TAG, "Velocity: %i", driver.TSTEP());
+                //     driver.hysteresis_end(config.hysteresis_end++ % 15);
+                //     // ESP_LOGI(TAG, "Velocity: %i SG_RESULT: %i", driver.TSTEP(), driver.SG_RESULT());
+                //     // Serial.print(driver.SG_RESULT(), DEC);
                 // }
                 
                 // vTaskDelay(1);
