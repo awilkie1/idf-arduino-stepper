@@ -99,6 +99,7 @@ void nvs_init(){
     // Initialize NVS.
     esp_err_t nvs_err = nvs_flash_init();
     if (nvs_err == ESP_ERR_NVS_NO_FREE_PAGES || nvs_err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_LOGE(TAG, "Failed to init NVS, erasing and trying again");
         // 1.OTA app partition table has a smaller NVS partitionb size than the non-OTA
         // partition table. This size mismatch may cause NVS initialization to fail.
         // 2.NVS partition contains data in new format and cannot be recognized by this version of code.

@@ -32,7 +32,7 @@
 
 // WIFI Network Connection
 // #define _WIFI_SSID "_bloom_strand"
-#define _WIFI_SSID "_bloom" // Ollie's test env
+#define _WIFI_SSID "_strand" // Ollie's test env
 #define _WIFI_PASS "sqU1d0ak"
 // #define _WIFI_SSID "_squidsoup" // Ollie's test env
 // #define _WIFI_PASS "squiddie"
@@ -49,7 +49,8 @@
 #define PORT 20002
 
 // Path to software upgrade file
-#define CONFIG_FIRMWARE_UPGRADE_URL "http://10.0.2.10:8888/bloom/code/firmware.bin"
+#define CONFIG_FIRMWARE_UPGRADE_URL "http://10.0.2.10:8071/updates/strand/firmware.bin"
+// test test test
 
 // number of individual commands allowed in command line
 #define COMMAND_ITEMS 35
