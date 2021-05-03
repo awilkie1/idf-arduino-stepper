@@ -4,7 +4,7 @@
 	branch = latest-3.3
 [submodule "main/libraries/ArduinoOSC"]
 	path = main/libraries/ArduinoOSC
-	url = https://github.com/hideakitai/ArduinoOSC.git
+	url = https://github.com/squidsoup-uk/ArduinoOSC.git
 
 [submodule "main/libraries/TMCStepper"]
 	path = main/libraries/TMCStepper
