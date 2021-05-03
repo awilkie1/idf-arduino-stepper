@@ -2,6 +2,9 @@
 	path = components/arduino
 	url = https://github.com/espressif/arduino-esp32.git
 	branch = latest-3.3
+[submodule "main/libraries/ArduinoOSC"]
+	path = main/libraries/ArduinoOSC
+	url = https://github.com/hideakitai/ArduinoOSC.git
 
 [submodule "main/libraries/TMCStepper"]
 	path = main/libraries/TMCStepper
