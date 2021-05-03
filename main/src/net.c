@@ -401,10 +401,11 @@ void broadcast_task(void *pvParameters)
     char addr_str[128];
     int addr_family;
     int ip_protocol;
+    BCAST_CMD data_in;
 
     while (1) {
 
-         xQueue_broadcast_task = xQueueCreate( 5, sizeof(char[COMMAND_ITEM_SIZE]));
+         xQueue_broadcast_task = xQueueCreate( 5, sizeof(BCAST_CMD));
          
         if( xQueue_broadcast_task == NULL )
         {
@@ -435,9 +436,13 @@ void broadcast_task(void *pvParameters)
         while (1) {
 
             ESP_LOGI(TAG, "Waiting for command");
+            memset(data_in.data, 0, COMMAND_ITEM_SIZE);
             struct sockaddr_in6 sourceAddr; // Large enough for both IPv4 or IPv6
             socklen_t socklen = sizeof(sourceAddr);
-            int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer) - 1, 0, (struct sockaddr *)&sourceAddr, &socklen);
+            int len = recvfrom(sock, data_in.data, COMMAND_ITEM_SIZE, 0, (struct sockaddr *)&sourceAddr, &socklen);
+            data_in.len = len;
+
+            ESP_LOGW(TAG, "Received broadcast data");
             
             // Error occured during receiving
             if (len < 0) {
@@ -456,11 +461,11 @@ void broadcast_task(void *pvParameters)
                 }
                 
 
-                rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string...
-                ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
-                ESP_LOGI(TAG, "%s", rx_buffer);
+                data_in.data[len] = 0; // Null-terminate whatever we received and treat like a string...
+                ESP_LOGI(TAG, "Received %d bytes from %s:", data_in.len, addr_str);
+                ESP_LOGI(TAG, "%s", data_in.data);
 
-                 if( xQueueSendToBack( xQueue_broadcast_task, ( void * ) &rx_buffer, ( TickType_t ) 10 ) != pdPASS )
+                 if( xQueueSendToBack( xQueue_broadcast_task, ( void * ) &data_in, ( TickType_t ) 10 ) != pdPASS )
                     {
                         /* Failed to post the message, even after 10 ticks. */
                         ESP_LOGI(TAG, "Unable to add command to BROADCAST queue");
@@ -468,11 +473,11 @@ void broadcast_task(void *pvParameters)
                         //xQueueReset( xQueue_broadcast_task );
                     }
 
-                int err = sendto(sock, rx_buffer, len, 0, (struct sockaddr *)&sourceAddr, sizeof(sourceAddr));
-                if (err < 0) {
-                    ESP_LOGE(TAG, "Error occured during sending: errno %d", errno);
-                    break;
-                }
+                // int err = sendto(sock, rx_buffer, len, 0, (struct sockaddr *)&sourceAddr, sizeof(sourceAddr));
+                // if (err < 0) {
+                //     ESP_LOGE(TAG, "Error occured during sending: errno %d", errno);
+                //     break;
+                // }
             }
         }
 

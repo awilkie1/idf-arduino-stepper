@@ -2,7 +2,6 @@
 #define _MAIN_H
 // ---- add your code below ----
 
-
 #include <esp_log.h>
 #include "esp_system.h"
 #include "esp_wifi.h"
@@ -21,6 +20,7 @@
 #include "freertos/timers.h"
 #include "freertos/event_groups.h"
 #include "esp_task_wdt.h"
+
 
 #ifdef __cplusplus
     extern "C" {
@@ -46,7 +46,7 @@
 #define MULTICAST_TTL 32
 
 // BROADCAST Communication
-#define PORT 20002
+#define PORT 2704 // 2704
 
 // Path to software upgrade file
 #define CONFIG_FIRMWARE_UPGRADE_URL "http://10.0.2.10:8071/updates/strand/firmware.bin"
@@ -85,6 +85,11 @@ typedef struct {
    int   action;
    char  action_value[COMMAND_ITEM_SIZE];
 } tcp_task_action_t;
+
+typedef struct bcast_cmd {
+    uint16_t len;
+    char data[COMMAND_ITEM_SIZE];
+} BCAST_CMD;
 
 typedef struct wave {
     int32_t x;

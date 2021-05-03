@@ -10,6 +10,7 @@
    - All additional source files in the src folder
    - All additional header files in the include folder
 */
+#include <Arduino.h>
 
 #include "main.h"
 
@@ -17,7 +18,6 @@
 
 #include "esp_spi_flash.h"
 
-#include <Arduino.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -42,10 +42,13 @@
 #include <driver/dac.h>
 #include "driver/ledc.h"
 
+// OSC includes
+
 extern "C" {
     // Any libraries written in  C++ should be included here
    //  #include "Stepper.h"
 }
+#include "net_osc.hpp"
 #include "net.h"
 #include "strand.hpp"
 
@@ -83,6 +86,8 @@ TaskHandle_t wave_task_handle = NULL;
 QueueSetHandle_t queue_set;
 QueueSetMemberHandle_t queue_set_member;
 
+BCAST_CMD broadcast_queue_value;
+
 extern "C" void app_main() {    
       
    Serial.begin(115200);
@@ -107,11 +112,11 @@ extern "C" void app_main() {
    device_stepper = command_init_stepper();
     
    xTaskCreate(&tcp_task, "tcp_task", 3072, NULL, 3, &tcp_task_handle);
-   xTaskCreate(&multicast_task, "multicast_task", 4096, NULL, 3, &multicast_task_handle);
+   // xTaskCreate(&multicast_task, "multicast_task", 4096, NULL, 3, &multicast_task_handle);
    xTaskCreate(&broadcast_task, "broadcast_task", 4096, NULL, 3, &broadcast_task_handle);
    
    char multicast_queue_value[COMMAND_ITEM_SIZE];
-   char broadcast_queue_value[COMMAND_ITEM_SIZE];
+   
     //char tcp_queue_value[COMMAND_ITEM_SIZE];
    
    server_ping("boot");//Sends the boot up message to the server
@@ -156,7 +161,7 @@ extern "C" void app_main() {
    queue_set = xQueueCreateSet(3);                    // Create QueueSet
    vTaskDelay(10);
    // Add all of the networking queue to the set
-   xQueueAddToSet(xQueue_multicast_task, queue_set);
+   // xQueueAddToSet(xQueue_multicast_task, queue_set);
    xQueueAddToSet(xQueue_broadcast_task, queue_set);
    xQueueAddToSet(xQueue_tcp_task, queue_set);
 
@@ -260,8 +265,9 @@ extern "C" void app_main() {
          command_handler(multicast_queue_value, 0);
       }
       if ((queue_set_member == xQueue_broadcast_task) && (xQueueReceive(xQueue_broadcast_task, &broadcast_queue_value, 10))) {
-         ESP_LOGD(TAG,"Recieved broadcast command %s\n", broadcast_queue_value);
-         command_handler(broadcast_queue_value, 0);
+         // ESP_LOGD(TAG,"Recieved broadcast command %s\n", broadcast_queue_value);
+         ESP_LOGW(TAG, "Received on broacast queue");
+         osc_handler(broadcast_queue_value, 0);
       }
       if ((queue_set_member == xQueue_tcp_task) && (xQueueReceive(xQueue_tcp_task, &tcp_queue_value, 10))) {
          ESP_LOGD(TAG,"Recieved tcp command %s\n", tcp_queue_value.action_value);
