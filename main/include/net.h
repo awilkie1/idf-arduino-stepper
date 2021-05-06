@@ -48,19 +48,9 @@ extern QueueHandle_t xQueue_tcp_respond;
 
 extern tcp_task_action_t tcp_queue_value;
 
-extern location_t device_location;
-extern stepper_t device_stepper;
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 
-//tcp stuff 
-void nvs_init(void);
-int32_t nvs_get_value(char* name);
-void nvs_set_value(char* name, int32_t value);
-location_t command_init_location();
-stepper_t command_init_stepper();
 
-void setPramamter(int type, int value);
-void saveParamters();
 
 void initialise_wifi(void);
 void wait_for_ip();
@@ -82,7 +72,6 @@ void tcp_task_init();
 void command_handler(char * queue_value, int type);
 void server_ping(char* command);
 void server_message(char* command,char* message);
-void command_ota(void);
 
 void wave_task(void *args);
 void wave_command(int x, int y, int z, int speed, int type, int move, int stepper_speed, int accel, int min, int max);

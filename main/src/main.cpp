@@ -50,6 +50,7 @@ extern "C" {
 }
 #include "net_osc.hpp"
 #include "net.h"
+#include "parameters.h"
 #include "strand.hpp"
 
 #define LEDC_HS_TIMER          LEDC_TIMER_0
@@ -165,7 +166,9 @@ extern "C" void app_main() {
    xQueueAddToSet(xQueue_broadcast_task, queue_set);
    xQueueAddToSet(xQueue_tcp_task, queue_set);
 
-   command_move(0, 100, 3000, 3000, 0, 100);   
+   // Roll back the wheel a bit to free up the solenoid.
+   command_move(0, 40, -100, 3000, 0, 100);   
+   vTaskDelay(pdMS_TO_TICKS(200));
 
    // -------- PCB TESTING --------
 
@@ -236,7 +239,7 @@ extern "C" void app_main() {
    //    vTaskDelay(LEDC_TEST_FADE_TIME / portTICK_PERIOD_MS);
    // }
 
-   ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, 900);
+   ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, 1000);
    ledc_update_duty(ledc_channel.speed_mode, ledc_channel.channel);
    
    vTaskDelay(LEDC_TEST_FADE_TIME / portTICK_PERIOD_MS);

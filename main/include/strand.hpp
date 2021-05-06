@@ -11,9 +11,15 @@
 #define HOME_BIT    0x01
 #define STOP_BIT    0x02
 
+#define REL 0
+#define ABS 1
+
 extern QueueHandle_t xQueue_stepper_command; // This external reference has to be defined again in Strand.c
 
 extern TaskHandle_t stepper_task_handle;
+
+// This was initially in net.h. Moved here so that net_osc.cpp can use it
+extern stepper_t device_stepper;
 
 
 // ----FUNCTIONS----

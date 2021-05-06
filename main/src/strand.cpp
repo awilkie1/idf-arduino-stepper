@@ -6,6 +6,7 @@
 // #include "AccelStepper.h"
 #include <AccelStepper.h>
 #include "net.h"
+#include "parameters.h"
 #include <driver/adc.h>
 
 static const char *TAG = "STEPPER";
@@ -74,6 +75,8 @@ struct Button {
 };
 Button button1 = {HOME_PIN, 0, false};
 
+
+
 void IRAM_ATTR isr() {
     if (stepper_task_handle != NULL) {
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -88,8 +91,16 @@ int currentPosition;
 //float factor = 11.8; // wheel ratio steps per mm
 float factor = 22.6; // wheel ratio steps per mm
 
+inline void clear_command_queue() {
+    stepper_command_t cmd_rcv;
+    while (xQueueReceive(xQueue_stepper_command, &cmd_rcv, 0)) {
+        ESP_LOGI(TAG, "clear command queue");
+    }
+}
+
 void command_move(int type, int move, int speed, int accel, int min, int max){
     //xQueueSendToBack(xQueue_stepper_command, (void *) &move, 0);
+    ESP_LOGI(TAG, "Command Move called");
     stepper_command_t test_action;
     test_action.move = move;
     test_action.type = type;
@@ -98,6 +109,8 @@ void command_move(int type, int move, int speed, int accel, int min, int max){
     test_action.accel = accel;
     test_action.min = min;
     test_action.max = max;
+
+    ESP_LOGI(TAG, "About to add to queue");
 
     xQueueSendToBack(xQueue_stepper_command, (void *) &test_action, 10);           
     ESP_LOGW(TAG, "STEPPER MOVING");
@@ -248,6 +261,8 @@ void stepper_task(void *args) {
 
         if (xQueueReceive(xQueue_stepper_command, &stepper_commands, portMAX_DELAY)) {
 
+            driver.toff(2); // turn stepper back on again
+
             // driver.(thr);
             // thr+=20;
             // ESP_LOGW(TAG, "Threshold: %i", thr);
@@ -324,7 +339,11 @@ void stepper_task(void *args) {
                         // Check if we have received a notificaiton value to overrid the stepper task
                         //ESP_LOGI(TAG, "Stepper STOP");
                         //ESP_LOGW(TAG, "Notify receive", ulTaskNotifyTake(pdTRUE, 0););
+                        driver.toff(0); // turn off compeletely (for safety)
                         stepper.stop();
+                        vTaskDelay(pdMS_TO_TICKS(50));
+                        
+                        clear_command_queue();
                         // stepper.setCurrentPosition(stepper.targetPosition());
                         
                         notify = 0;
@@ -353,7 +372,7 @@ void stepper_task(void *args) {
             }
 
             if (stepper_commands.type == 1){//saving position once moved 
-                setPramamter(1, currentPosition);
+                setParameter(1, currentPosition);
             }
             
         }
