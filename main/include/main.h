@@ -72,6 +72,12 @@ typedef struct stepper {
     int32_t number;
 } stepper_t;
 
+typedef struct {
+    int32_t stall;
+    int32_t tcool;
+    int32_t tpwm;
+} stepper_cfg_t;
+
 typedef struct stepper_command {
     int min;
     int max;

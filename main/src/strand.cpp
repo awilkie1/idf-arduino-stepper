@@ -40,11 +40,12 @@ const int uart_buffer_size = (1024 * 2);
 // #define HOME_PIN         32 // HOME (Oliver)
 
 // StallGuard
-#define STALL_VALUE     140 // 150
+#define STALL_VALUE     70 // 140  70 (85)
 #define HOME_PIN         21 // HOME
 
 // CoolStep 
-#define TCOOL_VALUE    130 // 150 > TPWMTHRS_THR  42 (higher value == lower speed) 130
+// TODO: keep reducing tcool value
+#define TCOOL_VALUE    100 // 150 > TPWMTHRS_THR  42 (higher value == lower speed) 130 80 (120) 60 good
 
 // StealthChop
 #define TPWMTHRS_THR    42 // 140 Threshold where stealthchop switches to spreadcycle
@@ -102,6 +103,11 @@ inline void clear_command_queue() {
 
 void go_slack() {
     driver.toff(0); // turn off compeletely (for safety)
+    // driver.ihold(0);     // Disable hold current to enable freewheel
+    // driver.freewheel(0); // Normal operation
+    // driver.freewheel(1); // Freewheeling
+    // driver.freewheel(2); // Coil shorted using LS drivers
+    // driver.freewheel(3); // Coil shorted using HS drivers
 }
 
 void command_move(int type, int move, int speed, int accel, int min, int max){
@@ -134,7 +140,7 @@ void sensor_task(void *args) {
     
     while(1) {
         // val = digitalRead(button1.PIN);
-        ESP_LOGI(TAG, "Velocity: %i SG_RESULT: %i", driver.TSTEP(), driver.SG_RESULT());
+        ESP_LOGI(TAG, "Velocity: %i SG_RESULT: %i CS_ACTUAL: %i", driver.TSTEP(), driver.SG_RESULT(), driver.cs_actual());
         vTaskDelay(pdMS_TO_TICKS(100));
         // ESP_LOGI(TAG, "Sensor Val: %i", val);
     }
@@ -183,13 +189,34 @@ void init_strand(int bootPosition) {
     // driver.TCOOLTHRS(0xFFFFF); // 20bit max
     // driver.THIGH(0);
     // driver.TCOOLTHRS(0xFFFFF); // 20bit max
-    
-    driver.TCOOLTHRS(TCOOL_VALUE); // 20bit max
+
+    // Get stepper config from NVS
+    stepper_cfg_t stepper_cfg = command_get_stall();
+    ESP_LOGW(TAG, "stall: %i tcool: %i tpwm: %i", stepper_cfg.stall, stepper_cfg.tcool, stepper_cfg.tpwm);
+    if ( !(stepper_cfg.stall && stepper_cfg.tcool && stepper_cfg.tpwm) ) { // if any of these are 0, use default values instead
+        ESP_LOGW(TAG, "No Stepper config in NVS, use default instead");
+        // ESP_LOGW(TAG, "Stepper CFG is null %i", (uint8_t) (stepper_cfg.stall || stepper_cfg.tcool || stepper_cfg.tpwm || 5) );
+        stepper_cfg.stall = STALL_VALUE;
+        stepper_cfg.tcool = TCOOL_VALUE;
+        stepper_cfg.tpwm = TPWMTHRS_THR;    
+    }
+
+        /* ----THRESHOLD----
+        * Changing the 'thr' variable raises or lowers the velocity at which the stepper motor switches between StealthChop and SpreadCycle
+        * - Low values results in SpreadCycle being activated at lower velocities
+        * - High values results in SpreadCycle being activated at higher velocities
+        * - If SpreadCycle is active while too slow, there will be noise
+        * - If StealthChop is active while too fast, there will also be noise
+        * For the 15:1 stepper, values between 70-120 is optimal 
+    */
+
+    driver.TCOOLTHRS(stepper_cfg.stall); // 20bit max
     // driver.semin(1);
     // driver.semax(5);
     // driver.sedn(0b01);
-    driver.SGTHRS(STALL_VALUE);
+    driver.SGTHRS((uint8_t) stepper_cfg.stall);
 
+    driver.TPWMTHRS(stepper_cfg.tpwm);
    // Stepper Library Setup
 
    // Disable this when mirostepping is disabled
@@ -228,16 +255,7 @@ void init_strand(int bootPosition) {
 
     }
 
-    /* ----THRESHOLD----
-        * Changing the 'thr' variable raises or lowers the velocity at which the stepper motor switches between StealthChop and SpreadCycle
-        * - Low values results in SpreadCycle being activated at lower velocities
-        * - High values results in SpreadCycle being activated at higher velocities
-        * - If SpreadCycle is active while too slow, there will be noise
-        * - If StealthChop is active while too fast, there will also be noise
-        * For the 15:1 stepper, values between 70-120 is optimal 
-    */
-
-    driver.TPWMTHRS(TPWMTHRS_THR);
+    
 
     // Set stepper interrupt
 
@@ -247,7 +265,7 @@ void init_strand(int bootPosition) {
    attachInterrupt(digitalPinToInterrupt(button1.PIN), isr, RISING);
 
     // Used to monitor stallguard value
-    xTaskCreatePinnedToCore(&sensor_task, "sensor_task", 2*1024, NULL, 3, &sensor_task_handle, 0);
+    // xTaskCreatePinnedToCore(&sensor_task, "sensor_task", 2*1024, NULL, 3, &sensor_task_handle, 0);
    //driver.VACTUAL(6400);
 }
 
@@ -333,12 +351,15 @@ void stepper_task(void *args) {
                             driver.toff(0); // turn off compeletely (for safety)
                             driver.toff(2); // and back on again
                             stepper.setCurrentPosition(0);
-                            stepper.runToNewPosition(-600);
+
+                            // stepper.runToNewPosition(-600); // reel out
+
                             home=false;
                             // setPramamter(1, 0);
                             currentPosition = 0;
                             // saveParamters();
                             // stepper.setCurrentPosition(stepper.targetPosition());
+                        clear_command_queue();
                         // } else {//Home Senced 
                         //     Serial.printf("SENCED");
                         //     home = true; 

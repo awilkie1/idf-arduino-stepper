@@ -2,6 +2,7 @@
 #include "net_osc.hpp"
 #include "strand.hpp"
 #include "parameters.h"
+#include "net.h"
 
 static const char *TAG = "NET_OSC";
 
@@ -32,22 +33,53 @@ void osc_handler(BCAST_CMD cmd, uint8_t type) {
     // STOP 
     if ( ArduinoOSC::match("/stop", msg->address()) ) {
         xTaskNotify(stepper_task_handle, STOP_BIT, eSetBits); 
+        return;
     }
 
     if ( ArduinoOSC::match("/slack", msg->address()) ) {
         // command_move(REL,0,0,0,device_stepper.min,device_stepper.min);
         go_slack();
+        return;
         // xTaskNotify(stepper_task_handle, SLACK_BIT, eSetBits); 
         
     }
 
     if ( ArduinoOSC::match("/reset", msg->address()) ) {
         command_reset();
+        return;
     }
 
     if ( ArduinoOSC::match("/ota", msg->address()) ) {
         command_ota();
+        return;
     }
+
+    if ( ArduinoOSC::match("/stepperWave", msg->address()) ) {
+        uint32_t x = msg->getArgAsInt32(0);
+        uint32_t y = msg->getArgAsInt32(1);
+        uint32_t z = msg->getArgAsInt32(2);
+        uint32_t speed = msg->getArgAsInt32(3);
+        uint32_t type = msg->getArgAsInt32(4);
+        uint32_t move = msg->getArgAsInt32(5);
+        uint32_t stepper_speed = msg->getArgAsInt32(6);
+        uint32_t accel = msg->getArgAsInt32(7);
+        uint32_t min = device_stepper.min;
+        uint32_t max = device_stepper.max;
+
+        wave_command(x, y, z, speed, type, move, stepper_speed, accel, min, max);
+        
+        return;
+    }
+
+    if ( ArduinoOSC::match("/stall", msg->address()) ) {
+        stepper_cfg_t stepper_cfg;
+        stepper_cfg.stall = msg->getArgAsInt32(0);
+        stepper_cfg.tcool = msg->getArgAsInt32(1);
+        stepper_cfg.tpwm = msg->getArgAsInt32(2);
+
+        command_set_stall(stepper_cfg);
+        return;
+    } 
 
     // TODO... USE a pre-saved set of speeds to that this doesn't fuck up big time
     if ( ArduinoOSC::match("/home", msg->address()) ) {
@@ -58,6 +90,7 @@ void osc_handler(BCAST_CMD cmd, uint8_t type) {
         int max = device_stepper.max;
 
         command_move(REL, move, speed, accel, min, max);
+        return;
     }
 
     // Relative movement
@@ -69,6 +102,7 @@ void osc_handler(BCAST_CMD cmd, uint8_t type) {
         int max = device_stepper.max;
 
         command_move(REL, move, speed, accel, min, max);
+        return;
     }
 
     // Absolute movement (set position)
@@ -80,6 +114,7 @@ void osc_handler(BCAST_CMD cmd, uint8_t type) {
         int max = device_stepper.max;
 
         command_move(ABS, move, speed, accel, min, max);
+        return;
     }
 
     if ( ArduinoOSC::match("/stepperNumTranlate", msg->address()) ) {
@@ -90,16 +125,46 @@ void osc_handler(BCAST_CMD cmd, uint8_t type) {
         int max = device_stepper.max;
 
         command_move(ABS, move, speed, accel, min, max);
+        return;
     }
 
     if ( ArduinoOSC::match("/setMin", msg->address()) ) {
-        int move = msg->getArgAsInt32(0);
-        int speed = msg->getArgAsInt32(1);
-        int accel = msg->getArgAsInt32(2);
-        int min = device_stepper.min;
-        int max = device_stepper.max;
+        uint32_t min = msg->getArgAsInt32(0);
+        setParameter(2, min);
+        saveParameter();
+        updateUdp();
+        return;
+    }
 
-        command_move(ABS, move, speed, accel, min, max);
+    if ( ArduinoOSC::match("/setMax", msg->address()) ) {
+        uint32_t max = msg->getArgAsInt32(0);
+        setParameter(3, max);
+        saveParameter();
+        updateUdp();
+        return;
+    }
+
+    if ( ArduinoOSC::match("/setNumber", msg->address()) ) {
+        uint32_t number = msg->getArgAsInt32(0);
+        setParameter(5, number);
+        saveParameter();
+        updateUdp();
+        return;
+    }
+
+    if ( ArduinoOSC::match("/setLocation", msg->address()) ) {
+        location_t loc;
+        loc.x = msg->getArgAsInt32(0);
+        loc.y = msg->getArgAsInt32(1);
+        loc.z = msg->getArgAsInt32(2);
+        updateUdp();
+        return;
+    }
+
+
+    if ( ArduinoOSC::match("/update", msg->address()) ) {
+        updateUdp();
+        return;
     }
 
 

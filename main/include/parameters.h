@@ -11,6 +11,8 @@ extern location_t device_location;
 
 esp_err_t command_reset();
 void command_ota(void);
+esp_err_t command_set_stall(stepper_cfg_t stepper_cfg_in);
+stepper_cfg_t command_get_stall();
 void nvs_init(void);
 int32_t nvs_get_value(char* name);
 void nvs_set_value(char* name, int32_t value);

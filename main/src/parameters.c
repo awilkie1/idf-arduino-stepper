@@ -22,6 +22,23 @@ esp_err_t command_reset(){
     return ESP_OK;
 }
 
+// Save stepper tuning info to NVS
+esp_err_t command_set_stall(stepper_cfg_t stepper_cfg_in) {
+    nvs_set_value("stall", stepper_cfg_in.stall);
+    nvs_set_value("tcool", stepper_cfg_in.tcool);
+    nvs_set_value("tpwm", stepper_cfg_in.tpwm);
+    return ESP_OK;
+}
+
+// Get stepper tuning info from NVS
+stepper_cfg_t command_get_stall() {
+    stepper_cfg_t stepper_cfg;
+    stepper_cfg.stall = nvs_get_value("stall");
+    stepper_cfg.tcool = nvs_get_value("tcool");
+    stepper_cfg.tpwm = nvs_get_value("tpwm");
+    return stepper_cfg;
+}
+
 //PARAMTER SAVING
 void nvs_init(){
     // Initialize NVS.

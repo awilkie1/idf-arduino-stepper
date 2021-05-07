@@ -72,6 +72,7 @@ void tcp_task_init();
 void command_handler(char * queue_value, int type);
 void server_ping(char* command);
 void server_message(char* command,char* message);
+void updateUdp();
 
 void wave_task(void *args);
 void wave_command(int x, int y, int z, int speed, int type, int move, int stepper_speed, int accel, int min, int max);
