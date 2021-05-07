@@ -353,6 +353,7 @@ void stepper_task(void *args) {
                             stepper.setCurrentPosition(0);
 
                             // stepper.runToNewPosition(-600); // reel out
+                            server_ping("home");
 
                             home=false;
                             // setPramamter(1, 0);
