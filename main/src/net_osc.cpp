@@ -23,15 +23,22 @@ void init_osc() {
 
 void osc_handler(BCAST_CMD cmd, uint8_t type) {
     pr.init(cmd.data, cmd.len); // load data into packet reader
-    ESP_LOGI(TAG, "Command: %s, Length: %i", cmd.data, cmd.len);
+    // ESP_LOGI(TAG, "Command: %s, Length: %i", cmd.data, cmd.len);
     OscMessage* msg = pr.decode(); // decode message
+    ESP_LOGW(TAG, "%s", msg->address().c_str());
 
     // ESP_LOGI(TAG, "Address: %s, Value1: %s", msg->address().c_str(), msg->getArgAsString(0).c_str());
 
     // STOP 
     if ( ArduinoOSC::match("/stop", msg->address()) ) {
-        ESP_LOGW(TAG, "STOP DETECTED");
         xTaskNotify(stepper_task_handle, STOP_BIT, eSetBits); 
+    }
+
+    if ( ArduinoOSC::match("/slack", msg->address()) ) {
+        // command_move(REL,0,0,0,device_stepper.min,device_stepper.min);
+        go_slack();
+        // xTaskNotify(stepper_task_handle, SLACK_BIT, eSetBits); 
+        
     }
 
     if ( ArduinoOSC::match("/reset", msg->address()) ) {
@@ -44,7 +51,6 @@ void osc_handler(BCAST_CMD cmd, uint8_t type) {
 
     // TODO... USE a pre-saved set of speeds to that this doesn't fuck up big time
     if ( ArduinoOSC::match("/home", msg->address()) ) {
-        ESP_LOGW(TAG, "%s", msg->address().c_str());
         int move = msg->getArgAsInt32(0);
         int speed = msg->getArgAsInt32(1);
         int accel = msg->getArgAsInt32(2);
@@ -56,7 +62,6 @@ void osc_handler(BCAST_CMD cmd, uint8_t type) {
 
     // Relative movement
     if ( ArduinoOSC::match("/stepperMove", msg->address()) ) {
-        ESP_LOGW(TAG, "%s", msg->address().c_str());
         int move = msg->getArgAsInt32(0);
         int speed = msg->getArgAsInt32(1);
         int accel = msg->getArgAsInt32(2);
@@ -68,7 +73,6 @@ void osc_handler(BCAST_CMD cmd, uint8_t type) {
 
     // Absolute movement (set position)
     if ( ArduinoOSC::match("/stepperTranslate", msg->address()) ) {
-        ESP_LOGW(TAG, "%s", msg->address().c_str());
         int move = msg->getArgAsInt32(0);
         int speed = msg->getArgAsInt32(1);
         int accel = msg->getArgAsInt32(2);
@@ -79,7 +83,6 @@ void osc_handler(BCAST_CMD cmd, uint8_t type) {
     }
 
     if ( ArduinoOSC::match("/stepperNumTranlate", msg->address()) ) {
-        ESP_LOGW(TAG, "%s", msg->address().c_str());
         int move = msg->getArgAsInt32(0);
         int speed = msg->getArgAsInt32(1);
         int accel = msg->getArgAsInt32(2);
@@ -90,7 +93,6 @@ void osc_handler(BCAST_CMD cmd, uint8_t type) {
     }
 
     if ( ArduinoOSC::match("/setMin", msg->address()) ) {
-        ESP_LOGW(TAG, "%s", msg->address().c_str());
         int move = msg->getArgAsInt32(0);
         int speed = msg->getArgAsInt32(1);
         int accel = msg->getArgAsInt32(2);

@@ -8,8 +8,12 @@
 #endif
 
 // ----VARIABLES----
-#define HOME_BIT    0x01
-#define STOP_BIT    0x02
+// #define HOME_BIT    0x01
+// #define STOP_BIT    0x02
+// #define SLACK_BIT   0x03
+#define HOME_BIT    1<<0
+#define STOP_BIT    1<<1
+#define SLACK_BIT   1<<2
 
 #define REL 0
 #define ABS 1
@@ -27,6 +31,7 @@ void init_strand(int bootPosition);
 void stepper_task(void *args);
 void sensor_task(void *args);
 
+void go_slack();
 void command_move(int move, int type, int speed, int accel, int min, int max); 
 
 #ifdef __cplusplus

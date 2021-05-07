@@ -80,7 +80,6 @@ TaskHandle_t multicast_task_handle = NULL;
 TaskHandle_t broadcast_task_handle = NULL;
 TaskHandle_t tcp_task_handle = NULL;
 TaskHandle_t stepper_task_handle = NULL;
-TaskHandle_t sensor_task_handle = NULL;
 
 TaskHandle_t wave_task_handle = NULL;
 
@@ -127,9 +126,8 @@ extern "C" void app_main() {
 
    xTaskCreatePinnedToCore(&stepper_task, "stepper_task", 4*1024, NULL, 4, &stepper_task_handle, 1);
 
-   esp_task_wdt_delete(NULL); // remove from watchdog
+   esp_task_wdt_delete(NULL); // remove from watchdog - stops watchdog timeouts for the startup task (i think lol)
 
-   // xTaskCreatePinnedToCore(&sensor_task, "sensor_task", 1024, NULL, 3, &sensor_task_handle, 0);
 
    xTaskCreatePinnedToCore(&wave_task, "wave_tasks", 2*1024, NULL, 3, &wave_task_handle, 0);
 
@@ -238,9 +236,21 @@ extern "C" void app_main() {
 
    //    vTaskDelay(LEDC_TEST_FADE_TIME / portTICK_PERIOD_MS);
    // }
+   
 
    ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, 1000);
    ledc_update_duty(ledc_channel.speed_mode, ledc_channel.channel);
+
+
+   // STARTUP TUNE
+   // ledc_set_freq(LEDC_HS_MODE, LEDC_HS_TIMER, 261);
+   // vTaskDelay(pdMS_TO_TICKS(300));
+   // ledc_set_freq(LEDC_HS_MODE, LEDC_HS_TIMER, 	349);
+   // vTaskDelay(pdMS_TO_TICKS(300));
+   // ledc_set_freq(LEDC_HS_MODE, LEDC_HS_TIMER, 523);
+   // vTaskDelay(pdMS_TO_TICKS(300));
+   // ledc_set_freq(LEDC_HS_MODE, LEDC_HS_TIMER, 18000);
+
    
    vTaskDelay(LEDC_TEST_FADE_TIME / portTICK_PERIOD_MS);
 

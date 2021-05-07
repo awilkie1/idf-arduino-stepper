@@ -13,6 +13,8 @@ static const char *TAG = "STEPPER";
 
 QueueHandle_t xQueue_stepper_command; // Must redefine here
 
+TaskHandle_t sensor_task_handle = NULL;
+
 stepper_command_t stepper_commands;
 
 HardwareSerial SerialPort(2);
@@ -38,11 +40,11 @@ const int uart_buffer_size = (1024 * 2);
 // #define HOME_PIN         32 // HOME (Oliver)
 
 // StallGuard
-#define STALL_VALUE     5 // 150
+#define STALL_VALUE     140 // 150
 #define HOME_PIN         21 // HOME
 
 // CoolStep 
-#define TCOOL_VALUE    42 // 150 > TPWMTHRS_THR
+#define TCOOL_VALUE    130 // 150 > TPWMTHRS_THR  42 (higher value == lower speed) 130
 
 // StealthChop
 #define TPWMTHRS_THR    42 // 140 Threshold where stealthchop switches to spreadcycle
@@ -98,6 +100,10 @@ inline void clear_command_queue() {
     }
 }
 
+void go_slack() {
+    driver.toff(0); // turn off compeletely (for safety)
+}
+
 void command_move(int type, int move, int speed, int accel, int min, int max){
     //xQueueSendToBack(xQueue_stepper_command, (void *) &move, 0);
     ESP_LOGI(TAG, "Command Move called");
@@ -124,12 +130,13 @@ void command_move(int type, int move, int speed, int accel, int min, int max){
 void sensor_task(void *args) {
     // adc1_config_width(ADC_WIDTH_BIT_12);
     // adc1_config_channel_atten(ADC1_CHANNEL_0,ADC_ATTEN_DB_0);
-    int val = 0;
+    // int val = 0;
     
     while(1) {
-        val = digitalRead(button1.PIN);
+        // val = digitalRead(button1.PIN);
+        ESP_LOGI(TAG, "Velocity: %i SG_RESULT: %i", driver.TSTEP(), driver.SG_RESULT());
         vTaskDelay(pdMS_TO_TICKS(100));
-        ESP_LOGI(TAG, "Sensor Val: %i", val);
+        // ESP_LOGI(TAG, "Sensor Val: %i", val);
     }
 }
 
@@ -147,13 +154,13 @@ void init_strand(int bootPosition) {
    driver.I_scale_analog(false);           // Use internal voltage reference
    driver.mstep_reg_select(1);             // necessary for TMC2208 to set microstep register with UART
    driver.toff(2);                         // Enables driver in software
-   driver.rms_current(1700);               // Set motor RMS current
+   driver.rms_current(1700);               // Set motor RMS current 1700
    driver.microsteps(MICROSTEPPING);       // Set microsteps to 1/16th
    driver.en_spreadCycle(false);           // Toggle spr
    driver.VACTUAL(0);                      // make sure velocity is set to 0
 
    // Stealthchop
-   driver.pwm_freq(0); // 2 1
+   driver.pwm_freq(0); // 2 1 00000
    driver.pwm_autoscale(true);             // Needed for stealthChop
 //    driver.pwm_grad(0);
    driver.pwm_ofs(0);
@@ -239,6 +246,8 @@ void init_strand(int bootPosition) {
    pinMode(button1.PIN, INPUT_PULLDOWN);
    attachInterrupt(digitalPinToInterrupt(button1.PIN), isr, RISING);
 
+    // Used to monitor stallguard value
+    xTaskCreatePinnedToCore(&sensor_task, "sensor_task", 2*1024, NULL, 3, &sensor_task_handle, 0);
    //driver.VACTUAL(6400);
 }
 
@@ -258,6 +267,8 @@ void stepper_task(void *args) {
 
     ESP_LOGI(TAG, "Start Stepper Task");
     while(1) {
+
+        // driver.toff(2); // turn stepper back on again
 
         if (xQueueReceive(xQueue_stepper_command, &stepper_commands, portMAX_DELAY)) {
 
@@ -339,15 +350,25 @@ void stepper_task(void *args) {
                         // Check if we have received a notificaiton value to overrid the stepper task
                         //ESP_LOGI(TAG, "Stepper STOP");
                         //ESP_LOGW(TAG, "Notify receive", ulTaskNotifyTake(pdTRUE, 0););
-                        driver.toff(0); // turn off compeletely (for safety)
                         stepper.stop();
-                        vTaskDelay(pdMS_TO_TICKS(50));
-                        
+                        stepper.setCurrentPosition(stepper.currentPosition());
                         clear_command_queue();
                         // stepper.setCurrentPosition(stepper.targetPosition());
                         
                         notify = 0;
                         // break;
+                    }
+
+                    if (notify & SLACK_BIT) {
+                        // stepper.setCurrentPosition(stepper.currentPosition());
+                        driver.toff(0); // turn off stepper compeletely 
+                        stepper.stop();
+                        stepper.setCurrentPosition(stepper.currentPosition());
+                        clear_command_queue();
+                        notify = 0;
+                        vTaskDelay(pdMS_TO_TICKS(1000));
+                        // break;
+                    
                     }
                 }
 
