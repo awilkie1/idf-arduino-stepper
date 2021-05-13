@@ -3,6 +3,7 @@
 #include "strand.hpp"
 #include "parameters.h"
 #include "net.h"
+#include "main.h"
 
 static const char *TAG = "NET_OSC";
 
@@ -83,9 +84,12 @@ void osc_handler(BCAST_CMD cmd, uint8_t type) {
 
     // TODO... USE a pre-saved set of speeds to that this doesn't fuck up big time
     if ( ArduinoOSC::match("/home", msg->address()) ) {
-        int move = msg->getArgAsInt32(0);
-        int speed = msg->getArgAsInt32(1);
-        int accel = msg->getArgAsInt32(2);
+        // int move = msg->getArgAsInt32(0);
+        // int speed = msg->getArgAsInt32(1);
+        // int accel = msg->getArgAsInt32(2);
+        int move = HOME_DISTANCE;
+        int speed = HOME_SPEED;
+        int accel = HOME_ACCEL;
         int min = device_stepper.min;
         int max = device_stepper.max;
 

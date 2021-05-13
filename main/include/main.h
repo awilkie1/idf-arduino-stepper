@@ -58,6 +58,12 @@
 // maximum command line length in chars
 #define COMMAND_ITEM_SIZE 512
 
+// Homing Config
+#define HOME_DISTANCE 20000
+#define HOME_SPEED 1100
+#define HOME_ACCEL 1000
+
+
 typedef struct location {
     int32_t x;
     int32_t y;

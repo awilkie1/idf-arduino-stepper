@@ -243,7 +243,7 @@ void init_strand(int bootPosition) {
     ESP_LOGI(TAG,"Likely cause: ");
 
     switch(result) {
-        case 0: ESP_LOGW(TAG,"SUCCESS");break;
+        case 0: ESP_LOGW(TAG,"SUCCESS"); break;
         case 1: ESP_LOGW(TAG,"loose connection"); server_ping("ERROR : Lose Connection");break;
         case 2: ESP_LOGW(TAG,"no power"); server_ping("ERROR : No Power"); break;
         default: ESP_LOGW(TAG,"Default. result: %i", result); break;
