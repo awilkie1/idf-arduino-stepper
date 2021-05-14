@@ -55,7 +55,7 @@ TMC2209Stepper driver(&SerialPort, R_SENSE , DRIVER_ADDRESS);
 
 AccelStepper stepper = AccelStepper(stepper.DRIVER, STEP_PIN, DIR_PIN);
 constexpr uint32_t steps_per_mm = 80;
-bool home = false;
+extern bool homing_active = false;
 
 // struct {
 //     uint8_t blank_time = 0;        // [16, 24, 36, 54]
@@ -347,26 +347,23 @@ void stepper_task(void *args) {
                 if (xResult  == pdPASS) {
                     ESP_LOGW(TAG, "Notification Received: %i", notify);
                     if (notify & HOME_BIT) {
-                        // if (home==true) {//Alowing to be wound out
+                        if (homing_active) { // used to prevent accidental homing
                             driver.toff(0); // turn off compeletely (for safety)
                             driver.toff(2); // and back on again
                             stepper.setCurrentPosition(0);
-
                             // stepper.runToNewPosition(-600); // reel out
                             server_ping("home");
-
-                            home=false;
-                            // setPramamter(1, 0);
+                            // Check if homing is active, then set the current position
+                            homing_active = false;
                             currentPosition = 0;
-                            // saveParamters();
-                            // stepper.setCurrentPosition(stepper.targetPosition());
                         clear_command_queue();
-                        // } else {//Home Senced 
-                        //     Serial.printf("SENCED");
-                        //     home = true; 
-                        //     button1.pressed = false; //Needed to flip off
-                        // }
-                        notify = 0;
+                        } else { // got stuck for some other reason. Probably still a good idea to stop
+                            driver.toff(0); // turn off compeletely (for safety)
+                            driver.toff(2); // and back on again
+                            stepper.setAcceleration(10000);
+                            stepper.stop();
+                        }
+                        notify = 0; // reset notification 
                     }
                     if (notify & STOP_BIT) {
                         // Check if we have received a notificaiton value to overrid the stepper task
@@ -377,7 +374,7 @@ void stepper_task(void *args) {
                         clear_command_queue();
                         // stepper.setCurrentPosition(stepper.targetPosition());
                         
-                        notify = 0;
+                        notify = 0; // reset notification 
                         // break;
                     }
 
@@ -387,7 +384,7 @@ void stepper_task(void *args) {
                         stepper.stop();
                         stepper.setCurrentPosition(stepper.currentPosition());
                         clear_command_queue();
-                        notify = 0;
+                        notify = 0; // reset notification 
                         vTaskDelay(pdMS_TO_TICKS(1000));
                         // break;
                     

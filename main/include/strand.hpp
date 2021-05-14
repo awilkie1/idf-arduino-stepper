@@ -24,6 +24,7 @@ extern TaskHandle_t stepper_task_handle;
 
 // This was initially in net.h. Moved here so that net_osc.cpp can use it
 extern stepper_t device_stepper;
+extern bool homing_active; // used to prevent accidental homing
 
 
 // ----FUNCTIONS----

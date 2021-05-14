@@ -93,6 +93,8 @@ void osc_handler(BCAST_CMD cmd, uint8_t type) {
         int min = device_stepper.min;
         int max = device_stepper.max;
 
+        homing_active = true; // enable homing mode. Off by default to prevent accidental homing
+
         command_move(REL, move, speed, accel, min, max);
         return;
     }
