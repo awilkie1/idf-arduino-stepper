@@ -173,6 +173,15 @@ void osc_handler(BCAST_CMD cmd, uint8_t type) {
         return;
     }
 
+    if ( ArduinoOSC::match("/setOrigin", msg->address()) ) {
+        // stepper.setCurrentPosition(0); // Set starting point of balls
+        int position = msg->getArgAsInt32(0);
+        setParameter(1, position);
+        saveParameter();
+        updateUdp();
+        return;
+    }
+
 
 
 

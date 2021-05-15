@@ -165,7 +165,8 @@ extern "C" void app_main() {
    xQueueAddToSet(xQueue_tcp_task, queue_set);
 
    // Roll back the wheel a bit to free up the solenoid.
-   command_move(0, 40, -100, 3000, 0, 100);   
+   // command_move(0, 40, -100, 3000, 0, 100);   
+   command_move(REL, -40, 100, 3000, 0, 100);   
    vTaskDelay(pdMS_TO_TICKS(200));
 
    // -------- PCB TESTING --------

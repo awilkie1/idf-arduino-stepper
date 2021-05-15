@@ -59,7 +59,7 @@
 #define COMMAND_ITEM_SIZE 512
 
 // Homing Config
-#define HOME_DISTANCE 20000
+#define HOME_DISTANCE -20000
 #define HOME_SPEED 1100
 #define HOME_ACCEL 1000
 

@@ -92,7 +92,8 @@ void IRAM_ATTR isr() {
 
 int currentPosition;
 //float factor = 11.8; // wheel ratio steps per mm
-float factor = 22.6; // wheel ratio steps per mm
+// float factor = 22.6; // wheel ratio steps per mm
+float factor = 24.0; // wheel ratio steps per mm
 
 inline void clear_command_queue() {
     stepper_command_t cmd_rcv;
@@ -224,7 +225,7 @@ void init_strand(int bootPosition) {
 //    stepper.setAcceleration(1000*MICROSTEPPING); // 2000mm/s^2
 
    stepper.setEnablePin(EN_PIN);
-   stepper.setPinsInverted(false, false, true);
+   stepper.setPinsInverted(true, false, true);
    stepper.enableOutputs();
 
    currentPosition = bootPosition;
@@ -301,7 +302,7 @@ void stepper_task(void *args) {
             stepper.setMaxSpeed(stepper_commands.speed); // 100mm/s @ 80 steps/mm
             stepper.setAcceleration(stepper_commands.accel); // 100mm/s @ 80 steps/mm
 
-            if (stepper_commands.type == 1){
+            if (stepper_commands.type == ABS){
 
                 if (stepper_commands.move <= stepper_commands.min) {
                     ESP_LOGI(TAG, "MIN");
@@ -321,7 +322,7 @@ void stepper_task(void *args) {
                 currentPosition = stepper_target;
                  //save out and back to main = currentPosition;
             }
-            if (stepper_commands.type == 0){
+            if (stepper_commands.type == REL){
                 stepper_move = stepper_commands.move;
                 ESP_LOGI(TAG, "Stepper Move %d : %d", stepper_move, currentPosition);
             }
