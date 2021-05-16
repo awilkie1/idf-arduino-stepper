@@ -99,9 +99,9 @@ extern "C" void app_main() {
     nvs_init();
 
    //SHORT DELAY TO NOT OVERLOAD NETWORK
-   //  srand (time(NULL));
-   //  int boot_delay = (esp_random() % RANDOM_BOOT_DELAY_PERIOD + 1) * 1000;
-   //  vTaskDelay(boot_delay / portTICK_PERIOD_MS);
+   long boot_delay = random(1,3000); 
+   ESP_LOGW(TAG, "Boot delay: %li", boot_delay);
+   vTaskDelay( pdMS_TO_TICKS( boot_delay ) );
 
    init_wifi();
 

@@ -27,7 +27,7 @@
 #endif
 
 //DELAYS 
-#define RANDOM_BOOT_DELAY_PERIOD 1 // seconds over which boot can be randomly delayed to avoid flooding the network at the same time
+#define RANDOM_BOOT_DELAY_PERIOD 2 // seconds over which boot can be randomly delayed to avoid flooding the network at the same time
 #define RANDOM_OTA_DELAY_PERIOD 5 // seconds over which OTA can be randomly delayed to avoid flooding the network at the same time
 
 // WIFI Network Connection
