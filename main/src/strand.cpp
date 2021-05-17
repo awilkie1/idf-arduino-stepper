@@ -40,12 +40,14 @@ const int uart_buffer_size = (1024 * 2);
 // #define HOME_PIN         32 // HOME (Oliver)
 
 // StallGuard
-#define STALL_VALUE     70 // 140  70 (85)
+#define STALL_VALUE     70 // DEFAULT
+// #define STALL_VALUE     65 // 140  70 (85)
 #define HOME_PIN         21 // HOME
 
 // CoolStep 
 // TODO: keep reducing tcool value
-#define TCOOL_VALUE    100 // 150 > TPWMTHRS_THR  42 (higher value == lower speed) 130 80 (120) 60 good
+#define TCOOL_VALUE    100 // 150 > TPWMTHRS_THR  42 (higher value == lower speed) DEFAULT
+// #define TCOOL_VALUE    70 // 150 > TPWMTHRS_THR  42 (higher value == lower speed) 130 80 (120) 60 good
 
 // StealthChop
 #define TPWMTHRS_THR    42 // 140 Threshold where stealthchop switches to spreadcycle
@@ -410,6 +412,7 @@ void stepper_task(void *args) {
                 // }
                 
                 // vTaskDelay(1);
+                taskYIELD(); // Prevent idle task starvation from triggering task watchdog
             }
 
             if (stepper_commands.type == 1){//saving position once moved 

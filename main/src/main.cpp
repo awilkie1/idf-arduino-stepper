@@ -167,6 +167,7 @@ extern "C" void app_main() {
    // Roll back the wheel a bit to free up the solenoid.
    // command_move(0, 40, -100, 3000, 0, 100);   
    command_move(REL, -40, 100, 3000, 0, 100);   
+   // command_move(REL, 400, 100, 3000, 0, 100);   
    vTaskDelay(pdMS_TO_TICKS(200));
 
    // -------- PCB TESTING --------
